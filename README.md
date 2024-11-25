@@ -22,10 +22,18 @@ Terminal-based AI curator that turns information noise into meaningful signal.
 pip install ai-signal
 ```
 
-Or with poetry:
+or 
+```bash
+pipx install ai-siganl
+```
+for global installation.
+
+
+If using poetry:
 
 ```bash
 poetry add ai-signal
+poetry shell # enter the virtualenv
 ```
 
 ## Quick Start
@@ -34,71 +42,11 @@ poetry add ai-signal
 ```bash
 aisignal init
 ```
+modify it, as described in the [configuration guide](docs/configuration.md):
 
-2. Edit your `~/.config/aisignal/config.yaml` along these lines:
-```yaml
-
-sources:
-- https://news.ycombinator.com
-- https://django-news.com
-
-prompts:
-  content_extraction: |
-    Please extract the top 10 news, articles, posts, whatever items compose this list.
-
-    For each items, find or generate:
-    * the title
-    * the source (URL of the list source)
-    * the original URL of the item, or _link_
-    * the categories, among the available ones, listed below.
-
-    Generate a list of items in markdown format, strictly following this syntax:
-
-    # Top 10 Items
-
-    1. **Title:** Announcing the 6.x Django Steering Council elections 🚀  
-       **Source:** https://django-news.com  
-       **Link:** https://cur.at/3TNDN81?m=web  
-       **Categories:** Django
-
-    2. **Title:** Django Channels 4.2.0 Release Notes  
-       **Source:** https://django-news.com
-       **Link:** https://cur.at/R9ZJhRV?m=web  
-       **Categories:** Django
-    ...
- 
-    In particular, the Source should only contain the URL.
-
-categories:
-- AI/ML
-- Django
-- Programming
-- Security
-- DevOps
-- Docker
-- Modern Data Stack
-
-quality_threshold: 0.7
-sync_interval: 24
-obsidian:
-  vault_path: '/~/Documents/Obsidian Vault'
-  template_path: ''
-social:
-  twitter_template: '{title}
-
-
-    {url}
-
-
-    #AI #Content'
-api_keys:
-  jinaai: -Your JinaAI key-
-  openai: -Your OpenAI key
-```
-
-3. Run AI Signal:
+2. Run AI Signal:
 ```bash
-aisignal
+aisignal run
 ```
 
 ## Keyboard Shortcuts
@@ -117,27 +65,6 @@ aisignal
 - `l`: Share on LinkedIn
 - `e`: Export to Obsidian
 
-## Configuration
-
-AI Signal can be configured via YAML file or through the TUI configuration panel. Main configuration options:
-
-- Content
-  - Sources to monitor
-  - Sync interval, in hours
-  - Categories of interest
-  - Prompt for content extraction
-  
-- Filtering
-  - Quality threshold
-  - Category filters
-  - Source filters
-  
-- Integration
-  - Obsidian vault path
-  - Obsidian templates
-  - Social media templates
-  
-See the [configuration guide](docs/configuration.md) for detailed options.
 
 ## Screenshots
 
