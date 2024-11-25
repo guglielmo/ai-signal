@@ -1,6 +1,6 @@
 # AI Signal
 
-![AI Signal Terminal](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/ai-signal-terminal.png)
+![AI Signal Terminal]https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
 Terminal-based AI curator that turns information noise into meaningful signal.
 
