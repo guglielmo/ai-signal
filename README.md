@@ -144,11 +144,6 @@ See the [configuration guide](docs/configuration.md) for detailed options.
 ### Main Interface
 ![Main Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
-### Content Details
-![Content Details](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/details.png)
-
-### Configuration Panel
-![Configuration](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/config.png)
 
 ## Contributing
 

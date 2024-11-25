@@ -94,7 +94,7 @@ class ShareScreen(Screen):
 
 class ContentCuratorApp(App):
     """Main application class"""
-    CSS_PATH = "styles.tss"
+    CSS_PATH = "styles.tcss"
     BINDINGS = [
         Binding("q", "quit", "Quit", show=True),
         Binding("c", "toggle_config", "Config", show=True),
