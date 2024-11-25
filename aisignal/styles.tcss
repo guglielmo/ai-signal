@@ -1,0 +1,58 @@
+Screen {
+    align: center middle;
+}
+
+#sidebar {
+    width: 25%;
+    height: 100%;
+    dock: left;
+    border-right: solid $primary;
+    padding: 1;
+}
+
+#main_content {
+    width: 100%;
+    height: 100%;
+    padding: 1;
+}
+
+#resource_list {
+    height: 100%;
+    border: solid $primary;
+}
+
+ListView {
+    height: auto;
+    border: solid $primary;
+    margin: 1;
+}
+
+#sync_status {
+    width: 100%;
+    height: auto;
+    background: $surface;
+    dock: bottom;
+}
+
+ProgressBar {
+    width: 100%;
+    height: 1;
+    align-horizontal: right;
+}
+
+
+Button {
+    margin: 1;
+}
+
+ResourceDetailScreen {
+    align: center middle;
+    background: $surface;
+    padding: 1;
+}
+
+ShareScreen {
+    align: center middle;
+    background: $surface;
+    padding: 1;
+}
