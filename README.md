@@ -145,11 +145,14 @@ See the [configuration guide](docs/configuration.md) for detailed options.
 ![Main Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
 
-## Contributing
+## Project Status
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
+This project is in its early development stages. 
+I am not yet ready to provide a working prototype. As an open source initiative, I welcome contributors 
+who can help advance the project. Please read the [Contributing Guide](CONTRIBUTING.md)
 
-### Development Setup
+
+### Development environment setup
 
 ```bash
 # Clone the repository
@@ -172,6 +175,7 @@ or, entering the virtualenv:
 poetry shell
 aisignal version
 ```
+
 
 ## Roadmap
 - [ ] Add support for more content sources (YT videos, podcasts, pdf)
