@@ -71,6 +71,12 @@ aisignal run
 ### Main Interface
 ![Main Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
+### Configuration interface
+[TODO]
+
+### Resource detail interface
+[TODO]
+
 
 ## Project Status
 
