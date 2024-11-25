@@ -179,13 +179,12 @@ aisignal version
 ```
 
 ## Roadmap
-
-- [ ] Add support for more content sources
+- [ ] Add support for more content sources (YT videos, podcasts, pdf)
 - [ ] Implement custom AI models
 - [ ] Add content archiving
+- [ ] Enable custom prompts for sources
 - [ ] Enable custom filtering rules
 - [ ] Add data export/import
-- [ ] Implement plugin system
 
 ## License
 
@@ -194,11 +193,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with [Textual](https://github.com/Textualize/textual)
-- AI powered by OpenAI
+- AI powered by OpenAI and Jina AI
 - Inspired by Daniel Miessler's [Fabric](https://github.com/danielmiessler/fabric)
 
 ## Author
 
 **Guglielmo Celata**
 - GitHub: [@guglielmo](https://github.com/guglielmo)
-- Twitter: [@guglio](https://twitter.com/guglio)
+- Mastodon: [@guille@mastodon.uno](https://mastodon.uno/@guille)
