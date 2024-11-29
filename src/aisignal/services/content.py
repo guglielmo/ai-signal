@@ -38,6 +38,18 @@ class ContentService:
         markdown_storage: MarkdownSourceStorage,
         item_storage: ParsedItemStorage,
     ):
+        """
+        :param jina_api_key: The API key used for authenticating requests to the Jina
+         application.
+        :param openai_api_key: The API key used for authenticating requests to the
+         OpenAI API.
+        :param categories: A list of category names that the instance will use for
+         classification or categorization.
+        :param markdown_storage: An instance of MarkdownSourceStorage used to manage
+         the storage and retrieval of markdown content.
+        :param item_storage: An instance of ParsedItemStorage used to manage the
+         storage and retrieval of parsed items.
+        """
         self.jina_api_key = jina_api_key
         self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
         self.categories = categories

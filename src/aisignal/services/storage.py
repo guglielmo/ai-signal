@@ -12,7 +12,16 @@ from textual import log
 
 @dataclass
 class ContentDiff:
-    """Represents differences between old and new content"""
+    """
+    Represents the differences between two sets of content blocks, highlighting new
+    additions and removals.
+
+    Attributes:
+      added_blocks (List[str]): A list of content blocks that have been added.
+      removed_blocks (List[str]): A list of content blocks that have been removed.
+      has_changes (bool): A flag indicating if there are any changes between the
+        content sets.
+    """
 
     added_blocks: List[str]  # New content blocks
     removed_blocks: List[str]  # Removed content blocks
@@ -20,14 +29,35 @@ class ContentDiff:
 
 
 class MarkdownSourceStorage:
-    """Stores and manages markdown content from sources using SQLite"""
+    """
+    A class to handle the storage and comparison of markdown content in a
+    SQLite database.
+    """
 
     def __init__(self, db_path: str = "storage.db"):
+        """
+        Initializes an instance of MyClass with a specified database path.
+
+        :param db_path: The file path for the database. Defaults to "storage.db".
+        """
         self.db_path = Path(db_path)
         self.init_database()
 
     def init_database(self):
-        """Initialize SQLite database schema"""
+        """
+        Initializes the database by creating a table named 'sources' if it does not
+        already exist. The table schema includes the following columns:
+        - url: TEXT, PRIMARY KEY, stores the URL of the source.
+        - markdown_content: TEXT, NOT NULL, stores the markdown content of the source.
+        - content_hash: TEXT, NOT NULL, stores the hash of the content for change
+          detection.
+        - last_updated: TIMESTAMP, NOT NULL, stores the timestamp of the last update.
+
+        This method ensures that the database structure is established before any
+        data operations are performed.
+
+        :return: None
+        """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -46,7 +76,19 @@ class MarkdownSourceStorage:
             conn.commit()
 
     def get_content_diff(self, url: str, new_content: str) -> ContentDiff:
-        """Compare new content with stored version and identify changes"""
+        """
+        Compares the stored content of a given URL with new content
+        to determine changes.
+        If no stored content is found, it assumes the content is entirely new.
+
+        :param url: The URL of the source whose content needs to be compared.
+        :type url: str
+        :param new_content: The new markdown content to compare against stored content.
+        :type new_content: str
+        :return: An object containing lists of added and removed blocks of content,
+          and a boolean indicating whether there are changes.
+        :rtype: ContentDiff
+        """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -88,7 +130,14 @@ class MarkdownSourceStorage:
             )
 
     def store_content(self, url: str, content: str):
-        """Store new content version"""
+        """
+        Stores the content in a SQLite database. The content is associated with the
+        given URL and is stored along with a hash of the content and a timestamp of
+        when it was last updated.
+
+        :param url: The URL associated with the content.
+        :param content: The content to be stored in the database.
+        """
         content_hash = hashlib.sha256(content.encode()).hexdigest()
 
         with sqlite3.connect(self.db_path) as conn:
@@ -103,19 +152,45 @@ class MarkdownSourceStorage:
             )
 
     def _split_into_blocks(self, content: str) -> List[str]:
-        """Split content into logical blocks for diffing"""
+        """
+        Splits the given text content into a list of blocks, where each block is
+        delimited by two newline characters. Each block in the resulting list is
+        stripped of leading and trailing whitespace.
+
+        :param content: The text content to be split into blocks.
+        :return: A list of blocks with each block being a non-empty, stripped string.
+        """
         return [b.strip() for b in content.split("\n\n") if b.strip()]
 
 
 class ParsedItemStorage:
-    """Stores and manages parsed items using SQLite"""
+    """
+    Class to manage storage of parsed items using SQLite.
+
+    Attributes:
+      db_path: The path to the SQLite database file.
+    """
 
     def __init__(self, db_path: str = "storage.db"):
+        """
+        Initializes the StorageService class with a database path.
+
+        :param db_path: The path to the database file. Defaults to "storage.db".
+        """
         self.db_path = Path(db_path)
         self.init_database()
 
     def init_database(self):
-        """Initialize SQLite database schema"""
+        """
+        Initializes the database by creating necessary tables and indexes. If the
+        tables already exist, it does not recreate them. This method ensures that
+        the 'items' table and its associated index are available for storing and
+        querying item data.
+
+        :raises sqlite3.Error: If an error occurs during the execution of SQL
+          commands.
+        :return: None
+        """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -147,11 +222,29 @@ class ParsedItemStorage:
             conn.commit()
 
     def _get_item_identifier(self, item: Dict) -> str:
-        """Create a unique identifier for an item"""
+        """
+        Generates a unique identifier for a given item by creating an MD5 hash from
+        the concatenation of the item's link and title.
+
+        :param item: A dictionary that contains 'link' and 'title' keys. It represents
+         the item for which the identifier should be generated.
+        :return: A string representing the unique identifier of the item as an MD5
+         hash.
+        """
         return hashlib.md5(f"{item['link']}{item['title']}".encode()).hexdigest()
 
     def store_items(self, source_url: str, items: List[Dict]):
-        """Store new items for a source"""
+        """
+        Stores a list of items into a SQLite database. Each item is checked for
+        existence before insertion to avoid duplicates. Logs informative messages
+        regarding the insertion success or errors encountered during the process.
+
+        :param source_url: The URL from which the items were fetched.
+        :type source_url: str
+        :param items: A list of dictionaries, each containing details of an item
+          such as 'title', 'link', 'categories', 'summary', and 'full_content'.
+        :type items: List[Dict]
+        """
         current_time = datetime.now().isoformat()
 
         with sqlite3.connect(self.db_path) as conn:
@@ -206,7 +299,14 @@ class ParsedItemStorage:
                 log.error(f"Error committing transaction: {e}")
 
     def get_stored_items(self, source_url: str) -> List[Dict]:
-        """Retrieve all stored items for a source"""
+        """
+        Retrieves stored items from the database that have a matching source URL,
+        ordered by the 'first_seen' timestamp in descending order.
+
+        :param source_url: URL of the source to filter items by.
+        :return: A list of dictionaries where each dictionary represents an item
+         with its attributes and parsed categories.
+        """
 
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -231,7 +331,18 @@ class ParsedItemStorage:
             return items
 
     def filter_new_items(self, source_url: str, items: List[Dict]) -> List[Dict]:
-        """Filter out items that have already been stored"""
+        """
+        Filters out items that already exist in the database from the provided list
+        based on the source URL and a unique item identifier.
+
+        :param source_url: The URL source of the items being checked. Used to verify
+         the origin of items in the database.
+        :param items: A list of dictionaries representing the items to be filtered.
+         Each dictionary should contain information sufficient to determine its
+         uniqueness, typically an identifier.
+        :return: A list of dictionaries representing items not found in the database,
+         meaning they are new based on the criteria checked.
+        """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
@@ -254,7 +365,13 @@ class ParsedItemStorage:
             return new_items
 
     def get_items_by_category(self, category: str) -> List[Dict]:
-        """Query items by category"""
+        """
+        Fetches items from the database that belong to a specified category.
+
+        :param category: The category to filter items by.
+        :return: A list of dictionaries, where each dictionary represents an item
+          and contains its details, including the categories it belongs to.
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()

@@ -28,22 +28,50 @@ if TYPE_CHECKING:
 
 class BaseScreen(Screen):
     """
-    A base class for creating screens, inheriting from the Screen class.
-    Provides a framework for a consistent layout with a header and footer.
+    A base class for screens, providing foundational layout elements like
+    header and footer, while requiring subclasses to define the main content
+    area.
     """
 
     def compose(self) -> ComposeResult:
-        """Base composition including header and footer"""
+        """
+        Composes and yields a series of UI components which include a header, content,
+        and footer. The content is generated dynamically by the `compose_content`
+        method, which is expected to yield its parts.
+
+        Yields:
+            Header: The static header component.
+            Iteration[Component]: The components produced by `compose_content`.
+            Footer: The static footer component.
+        """
         yield Header()
         yield from self.compose_content()
         yield Footer()
 
     def compose_content(self) -> ComposeResult:
-        """To be implemented by child screens"""
+        """
+        Generates and provides the content for composition.
+
+        The `compose_content` method is designed to yield content
+        that is contained within a `Container` object. It is utilized
+        to define the structure or layout for the content composition.
+
+        Yields:
+          Container: An instance of `Container` that holds the composed
+            elements or widgets.
+        """
         yield Container()
 
     @property
     def app(self) -> "ContentCuratorApp":
+        """
+        Retrieves the ContentCuratorApp instance associated with the current object.
+
+        This property overrides the base class implementation to return the specific
+        application instance utilized within the content curation context.
+
+        :return: The ContentCuratorApp instance for the current object.
+        """
         return super().app  # type: ignore
 
 
@@ -92,7 +120,18 @@ class MainScreen(BaseScreen):
                     yield DataTable(id="resource_list")
 
     def on_mount(self) -> None:
-        """Set up the screen when mounted"""
+        """
+        Called when the main screen is mounted. This method performs initial setup
+        and configuration tasks, including resource list initialization and setting
+        up filters. It ensures that the main screen components are ready for user
+        interaction.
+
+        In particular, it initializes a data table for resource listing with specific
+        columns and cursor type for row selection. It also sets up filters and updates
+        the resource list to reflect any pre-existing data or state.
+
+        :return: None
+        """
         self.app.log.debug("Main screen mounted")
 
         # Initialize resource list
@@ -105,7 +144,16 @@ class MainScreen(BaseScreen):
         self.update_resource_list()
 
     def _setup_filters(self) -> None:
-        """Setup category and source filters"""
+        """
+        Sets up the available filters for categories and sources in the UI. This method
+        queries and clears the current items in the category and source filter views.
+        It then iterates through the list of categories and sources configured in the
+        application, creates ListItem objects for each, and appends them to the
+        corresponding ListView. If any of the categories or sources are already
+        selected in the filter state, they are marked with a "-selected" class.
+
+        :return: None
+        """
         category_list = self.query_one("#category_filter", ListView)
         source_list = self.query_one("#source_filter", ListView)
 
@@ -125,7 +173,15 @@ class MainScreen(BaseScreen):
             source_list.append(item)
 
     def action_toggle_filters(self) -> None:
-        """Toggle visibility of the filters sidebar"""
+        """
+        Toggles the visibility of the filters sidebar in the application. If the sidebar
+        is currently hidden, it will be made visible with a width of 25%, and a
+        notification will be displayed indicating that filters are visible. If the
+        sidebar is visible, it will be hidden with a width of 0, and a notification will
+        indicate that filters are hidden.
+
+        :return: None
+        """
         sidebar = self.query_one("#sidebar")
         if sidebar.has_class("-hidden"):
             sidebar.remove_class("-hidden")
@@ -137,11 +193,24 @@ class MainScreen(BaseScreen):
             self.app.notify("Filters hidden")
 
     def action_toggle_config(self) -> None:
-        """Show configuration screen"""
+        """
+        Navigates the application to the configuration screen. This method triggers
+        the transition to the `ConfigScreen`, allowing the user to view and modify
+        configuration settings as needed.
+
+        :return: None
+        """
         self.app.push_screen(ConfigScreen())
 
     def action_sync(self) -> None:
-        """Start the synchronization process"""
+        """
+        Initiates the synchronization process if it is not already in progress.
+
+        If the `is_syncing` attribute is False, this method creates an asynchronous
+        task using `asyncio.create_task` to execute the `_sync_content` method.
+
+        :return: None
+        """
         if not self.is_syncing:
             asyncio.create_task(self._sync_content())
 
@@ -257,12 +326,30 @@ class MainScreen(BaseScreen):
         self.log(f"Showing {len(filtered_resources)} resources after filtering")
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        """Handle list view highlight events"""
+        """
+        Handles the event triggered when a list view item is highlighted. The method
+        receives an event of type `ListView.Highlighted` which contains details
+        about the highlighted item in the list view.
+
+        :param event: The event containing information about the highlighted item.
+        :type event: ListView.Highlighted
+        """
         # Implementation remains the same as in original app
         pass
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle row selection in the data table"""
+        """
+        Handles the event triggered when a row in a data table is selected.
+
+        This method logs the row key of the selected row and then retrieves the
+        corresponding resource using the resource manager. It subsequently pushes a
+        new screen to display details of the selected resource.
+
+        :param event: The event object containing details about the selected row from
+         the data table. The `row_key` attribute of the event denotes the identifier
+         of the selected row.
+        :return: None
+        """
 
         self.app.log.info(event.row_key)
         resource = self.app.resource_manager[event.row_key]
@@ -270,7 +357,14 @@ class MainScreen(BaseScreen):
 
 
 class ConfigScreen(BaseScreen):
-    """Screen for viewing and editing configuration"""
+    """
+    Represents a configuration screen allowing users to input and modify configuration
+    settings such as API keys, categories, sources, and Obsidian-related paths.
+
+    Attributes:
+      BINDINGS: Defines key bindings for actions such as popping the screen and
+        saving the configuration.
+    """
 
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Back", show=True),
@@ -278,6 +372,15 @@ class ConfigScreen(BaseScreen):
     ]
 
     def compose_content(self) -> ComposeResult:
+        """
+        Compose the structure and content of the user interface for API keys,
+        categories, sources, and Obsidian settings.
+        This method generates the UI components needed for user input and
+        configuration management.
+
+        :return: A generator yielding UI components for
+          each section of the configuration.
+        """
         with ScrollableContainer():
             yield Label("API Keys", classes="section-header")
             with Container(classes="section"):
@@ -296,9 +399,7 @@ class ConfigScreen(BaseScreen):
 
             yield Label("Categories", classes="section-header")
             with Container(classes="section"):
-                yield OptionList(
-                    *self.app.config_manager.categories, id="categories"
-                )
+                yield OptionList(*self.app.config_manager.categories, id="categories")
                 yield Button("Add Category", id="add_category")
 
             yield Label("Sources", classes="section-header")
@@ -320,7 +421,13 @@ class ConfigScreen(BaseScreen):
                 )
 
     def action_save(self) -> None:
-        """Save configuration changes"""
+        """
+        Saves the current configuration settings by collecting input values and storing
+        them using the application's configuration manager. Notifies the user of success
+        or failure during the save operation.
+
+        :raises: Exception if there is an error in saving the configuration.
+        """
         try:
             # Collect values from inputs
             config = {
@@ -347,7 +454,13 @@ class ConfigScreen(BaseScreen):
             self.notify(f"Error saving configuration: {str(e)}")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses"""
+        """
+        Handles button press events. Depending on the button id, this function
+        navigates to a relevant screen to add a category or source.
+
+        :param event: The button press event containing information about
+         the pressed button and related context.
+        """
         if event.button.id == "add_category":
             self.app.push_screen(
                 AddItemScreen("Add Category", self.query_one("#categories").append)
@@ -403,11 +516,26 @@ class ResourceDetailScreen(BaseScreen):
     ]
 
     def __init__(self, resource: "Resource"):
+        """
+        Initializes a new instance of the class.
+
+        :param resource: An instance of the Resource class that the instance
+          will manage. This parameter is stored as an instance attribute
+          for use within the class.
+        """
         super().__init__()
         self.resource = resource
 
     def compose_content(self) -> ComposeResult:
-        """Display the resource details"""
+        """
+        Generates a structured composition of content based on the internal resource
+        data. The content includes details such as title, source, categories, ranking,
+        date, summary, and a truncated version of the full content.
+
+        Yields:
+          ComposeResult: A structured representation consisting of labels
+          displaying the resource attributes.
+        """
         with Vertical():
             yield Label(f"Title: {self.resource.title}")
             yield Label(f"Source: {self.resource.source}")
@@ -430,17 +558,43 @@ class ResourceDetailScreen(BaseScreen):
                 )
 
     def action_open_browser(self) -> None:
-        """Open the resource URL in browser"""
+        """
+        Opens the URL stored in the resource object using the default web browser.
+
+        Utilizes the `webbrowser` module to open the web page specified by the
+        URL from the resource associated with the current instance.
+
+        :return: None
+        """
         import webbrowser
 
         webbrowser.open(self.resource.url)
 
     def action_share(self) -> None:
-        """Share the resource"""
+        """
+        Displays a notification indicating that the share functionality is not
+        yet implemented.
+
+        This method triggers a notification within the application to inform
+        users that the requested feature, share functionality, is currently
+        unavailable. This serves as a placeholder action to prevent errors
+        when the share request is triggered.
+
+        :return: None
+        """
         self.app.notify("Share functionality not implemented yet")
 
     def action_export(self) -> None:
-        """Export to Obsidian"""
+        """
+        Exports the current resource to Obsidian and notifies the application.
+
+        Utilizes the export manager within the application to perform the
+        export operation for the specified resource. Following the export
+        operation, a notification message is sent to inform the user that
+        the resource has been successfully exported to Obsidian.
+
+        :return: None
+        """
         self.app.export_manager.export_to_obsidian(self.resource)
         self.app.notify("Resource exported to Obsidian")
 
@@ -454,6 +608,12 @@ class ShareScreen(BaseScreen):
     """
 
     def __init__(self, resource: Resource):
+        """
+        Initializes the class with the given resource.
+
+        :param resource: The resource object to be associated with this instance.
+        :type resource: Resource
+        """
         super().__init__()
         self.resource = resource
 
@@ -472,14 +632,43 @@ class ShareScreen(BaseScreen):
 
 
 class AddItemScreen(Screen):
-    """Screen for adding a new item (category or source)"""
+    """
+    A screen for adding a new item with a title, input, and action buttons.
+
+    Attributes:
+      title: A reactive string representing the screen title, modifiable by UI
+        state changes.
+      callback: A function to be called with the new item's value when the "Add"
+        button is pressed.
+
+    Methods:
+      compose: Sets up the UI layout by adding title, input field, and buttons.
+      on_button_pressed: Handles button press events to add an item or cancel
+        the action.
+    """
 
     def __init__(self, title: Reactive[str | None], callback) -> None:
+        """
+        Initializes a new instance of the class with a given title and callback.
+
+        :param title: A reactive string that can be None. Represents the title
+          of the instance.
+        :param callback: A callable object that will be executed during the
+          instance's lifecycle.
+        """
         super().__init__()
         self.title = title
         self.callback = callback
 
     def compose(self) -> ComposeResult:
+        """
+        Generates and yields a container with user interface elements for adding
+        new items. The container includes a label displaying the title, an input
+        field for new item entry, and buttons for adding or canceling the operation.
+
+        :return: A ComposeResult containing a container with label, input, and
+        buttons for the user interface.
+        """
         yield Container(
             Label(self.title),
             Input(id="new_item"),
@@ -488,6 +677,14 @@ class AddItemScreen(Screen):
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """
+        Handles the button pressed event. Depending on the button ID, it either adds
+        a new item or cancels the action by popping the current screen.
+
+        :param event: Button pressed event containing information about the button that
+          was pressed.
+        :return: None
+        """
         if event.button.id == "add":
             new_item = self.query_one("#new_item").value
             if new_item:

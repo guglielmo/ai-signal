@@ -15,7 +15,21 @@ from .services.content import ContentService
 
 
 class ContentCuratorApp(App):
-    """Main application class"""
+    """
+    Represents the main application for the content curation tool. It handles the
+    initialization of various services and managers, and provides methods to manage
+    UI components and error handling.
+
+    Attributes:
+      CSS_PATH (str): Path to the application's CSS file.
+      BINDINGS (list): Key bindings for UI actions.
+
+    Methods:
+      on_mount: Pushes the main screen upon application mount.
+      notify_user: Displays a notification to the user in the UI.
+      handle_error: Logs errors and notifies the user.
+      on_filter_change: Handles updates when filters change and refreshes the view.
+    """
 
     CSS_PATH = "styles/app.tcss"
     BINDINGS = [
@@ -23,6 +37,13 @@ class ContentCuratorApp(App):
     ]
 
     def __init__(self, config_path: Optional[Path] = None):
+        """
+        Initializes the application with necessary configurations and managers.
+
+        :param config_path: Path to the configuration file. If not provided, default
+          configuration is used.
+        :raises Exception: If initialization of any component fails.
+        """
         super().__init__()
 
         try:
@@ -48,21 +69,52 @@ class ContentCuratorApp(App):
             raise
 
     def on_mount(self) -> None:
-        """Push the main screen when the app is mounted"""
+        """
+        Invoked when the component is mounted in the UI hierarchy. Initializes the
+        main screen by pushing it onto the screen stack.
+
+        :return: None
+        """
         self.push_screen(MainScreen())
 
     def notify_user(self, message: str) -> None:
-        """Display a notification to the user in the UI"""
+        """
+        Sends a notification message to the user.
+
+        :param message: The message to be sent to the user.
+        """
         self.notify(message)
 
     def handle_error(self, message: str, error: Exception = None) -> None:
-        """Log error and notify user"""
+        """
+        Handles an error by logging an error message and notifying the user.
+
+        :param message: A string detailing the error message to be logged and
+         displayed to the user.
+        :param error: An optional Exception object providing additional context
+         about the error. If provided, its string representation is appended to
+         the error message.
+        :return: None
+        """
         error_msg = f"{message}: {str(error)}" if error else message
         self.log.error(error_msg)
         self.notify_user(f"Error: {message}")
 
     def on_filter_change(self) -> None:
-        """Callback when filters change"""
+        """
+        Handles changes to filter settings and ensures that the display is updated
+        accordingly. It logs the filter update event and refreshes the view by
+        updating the resource list in the main screen.
+
+        This method identifies the main screen from the screen stack, which is
+        expected to contain various screens including a main screen of type
+        `MainScreen`. Upon finding the main screen, it invokes the method to
+        refresh its resource list to reflect the updated filters.
+
+        If no main screen is found, no action is taken beyond logging.
+
+        :return: None
+        """
         self.log("Filters updated, refreshing view")
 
         # Find the main screen and update its resource list
@@ -74,7 +126,12 @@ class ContentCuratorApp(App):
 
 
 def run_app(config_path: Optional[Path] = None):
-    """Run the application with optional config path"""
+    """
+    Initializes and runs the ContentCuratorApp application.
+
+    :param config_path: Optional Path to the configuration file. If not provided,
+      the application may use default settings.
+    """
     app = ContentCuratorApp(config_path)
     app.run()
 

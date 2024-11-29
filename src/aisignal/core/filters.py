@@ -5,9 +5,9 @@ from typing import Callable, Set
 @dataclass
 class ResourceFilterState:
     """
-    Represents the state of resource filtering, including selected categories,
-    selected sources, and sorting preference. Notifies changes in filter state
-    via a callback function.
+    Represents the state of resource filters, including selected categories,
+    selected sources, and a sorting flag. Provides methods to toggle states
+    and reset all filters, triggering a callback function upon changes.
     """
 
     selected_categories: Set[str]
@@ -22,7 +22,15 @@ class ResourceFilterState:
         self.on_filter_change = on_filter_change
 
     def toggle_category(self, category: str) -> None:
-        """Toggle a category selection"""
+        """
+        Toggles the presence of a given category in the selected categories set. If the
+        category is currently in the set, it will be removed. If the category is
+        absent, it will be added. Calls the on_filter_change method after updating
+        the selected categories set.
+
+        :param category: The category to toggle in the selected categories set.
+        :type category: str
+        """
         if category in self.selected_categories:
             self.selected_categories.remove(category)
         else:
@@ -30,7 +38,15 @@ class ResourceFilterState:
         self.on_filter_change()
 
     def toggle_source(self, source: str) -> None:
-        """Toggle a source selection"""
+        """
+        Toggles the presence of a source in the selected_sources set. If the source
+        is already present, it is removed. If it is not present, it is added. After
+        modifying the selected_sources, it triggers the on_filter_change method to
+        update any dependent state.
+
+        :param source: The source to be toggled in the selected_sources set.
+        :type source: str
+        """
         if source in self.selected_sources:
             self.selected_sources.remove(source)
         else:
@@ -38,12 +54,24 @@ class ResourceFilterState:
         self.on_filter_change()
 
     def toggle_sort(self) -> None:
-        """Toggle datetime sorting"""
+        """
+        Toggles the sorting order between date-time and other criteria.
+
+        This method switches the current sorting preference to its opposite state
+        and triggers an update in the filter settings to reflect the new sorting
+        order.
+        """
         self.sort_by_datetime = not self.sort_by_datetime
         self.on_filter_change()
 
     def reset(self) -> None:
-        """Reset all filters"""
+        """
+        Resets the filter settings to their default values. Clears the selected
+        categories, selected sources, and sets the sorting by datetime to False.
+        Triggers the on_filter_change callback to apply these settings.
+
+        :return: None
+        """
         self.selected_categories.clear()
         self.selected_sources.clear()
         self.sort_by_datetime = False
