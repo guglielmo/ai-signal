@@ -17,59 +17,6 @@ app = typer.Typer(
 CONFIG_DIR = Path.home() / ".config" / "aisignal"
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
-default_config = {
-    "sources": [
-        "https://news.ycombinator.com",
-        "https://medium.com/tag/artificial-intelligence",
-    ],
-    "prompts": [
-        {"content_extraction": """
-Please extract the top 10 news, articles, posts, whatever items compose this list.
-
-For each items, find or generate:
-* the title
-* the source (URL of the list source)
-* the original URL of the item, or _link_
-* the categories, among the available ones, listed below.
-
-Generate a list of items in markdown format, strictly following this syntax:
-
-# Top 10 Items
-
-1. **Title:** Announcing the 6.x Django Steering Council elections 🚀  
-   **Source:** https://django-news.com  
-   **Link:** https://cur.at/3TNDN81?m=web  
-   **Categories:** Django
-
-2. **Title:** Django Channels 4.2.0 Release Notes  
-   **Source:** https://django-news.com
-   **Link:** https://cur.at/R9ZJhRV?m=web  
-   **Categories:** Django
-...
-
-In particular, the Source should only contain the URL.        
-        """}
-    ],
-    "categories": [
-        "AI/ML",
-        "Programming",
-        "Security",
-        "DevOps",
-    ],
-    "quality_threshold": 0.7,
-    "sync_interval": 24,
-    "obsidian": {
-        "vault_path": "",
-        "template_path": "",
-    },
-    "social": {
-        "bluesky_template": "{title}\n\n{url}\n\n#AI #Content",
-    },
-    "api_keys": {
-        "jinaai": "CHANGE ME",
-        "openai": "CHANGE ME"
-    }
-}
 
 
 def ensure_config():

@@ -78,16 +78,16 @@ MAX_CONNECTIONS = 100
 
 ### Project Structure
 ```
-project_name/
+ai-signal/
 ├── src/
-│   └── project_name/
+│   └── aisignal/
 │       ├── __init__.py
 │       ├── core/
-│       ├── utils/
-│       └── config/
+│       ├── ui/
+│       └── utils/
 ├── tests/
 ├── docs/
-└── setup.py
+└── pyproject.toml
 ```
 
 ### Code Quality Tools

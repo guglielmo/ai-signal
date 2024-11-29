@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ai-signal"
-version = "0.1.7"
+version = "0.3.0"
 description = "Terminal-based AI curator that turns information noise into meaningful signal"
 authors = ["Guglielmo Celata <guglielmo.celata@gmail.com>"]
 license = "MIT"
@@ -27,7 +27,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 packages = [
-    { include = "aisignal" }
+    { include = "aisignal", from = "src" }
 ]
 
 [tool.poetry.dependencies]
