@@ -139,9 +139,59 @@ class MainScreen(BaseScreen):
         table.cursor_type = "row"
         table.add_columns("Title", "Source", "Categories", "Ranking", "Date")
 
+        # hide progress bar
+        progress = self.query_one("#sync_progress", ProgressBar)
+        progress.styles.visibility = "hidden"
+
         # Initialize filters
         self._setup_filters()
+
+        # Load existing items from storage
+        self._load_stored_items()
+
+        # Update resource list with loaded items
         self.update_resource_list()
+
+        # give the focus to the data table
+        table.focus()
+
+    def _load_stored_items(self) -> None:
+        """
+        Loads stored items from configured sources, processes them into Resource
+        objects, and adds them to the application's resource manager. It retrieves
+        stored items from the parsed item storage, attempts to convert each item
+        into a Resource object, and handles any exceptions encountered during the
+        conversion process.
+
+        Exceptions during Resource creation are logged, and processing continues
+        with remaining items.
+
+        :return: None
+        """
+        storage = self.app.item_storage  # Assuming this exists
+        resources = []
+
+        for source in self.app.config_manager.sources:
+            items = storage.get_stored_items(source)
+            for item in items:
+                try:
+                    resource = Resource(
+                        id=item["id"],
+                        title=item["title"],
+                        url=item["link"],
+                        categories=item["categories"],
+                        ranking=0.0,
+                        summary=item["summary"],
+                        full_content=item["full_content"],
+                        datetime=datetime.fromisoformat(item["first_seen"]),
+                        source=item["source_url"],
+                    )
+                    resources.append(resource)
+                except Exception as e:
+                    self.app.log.error(f"Error creating resource from item: {e}")
+                    continue
+
+        self.app.resource_manager.add_resources(resources)
 
     def _setup_filters(self) -> None:
         """
@@ -229,6 +279,7 @@ class MainScreen(BaseScreen):
         self.log.info("Starting content synchronization")
         self.is_syncing = True
         progress = self.query_one("#sync_progress", ProgressBar)
+        progress.styles.visibility = "visible"
 
         try:
             total_urls = len(self.app.config_manager.sources)
@@ -281,6 +332,7 @@ class MainScreen(BaseScreen):
             )
         finally:
             self.is_syncing = False
+            progress.styles.visibility = "hidden"
             progress.update(progress=0)
 
     def update_resource_list(self) -> None:

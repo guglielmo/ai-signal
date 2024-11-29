@@ -1,7 +1,5 @@
 from datetime import datetime
 
-import pytest
-
 from aisignal.core.models import Resource
 
 

@@ -5,7 +5,6 @@ from aisignal.core.config_schema import (
     APIKeys,
     AppConfiguration,
     ConfigError,
-    ConfigFileError,
     ConfigValidationError,
     ObsidianConfig,
     Prompts,
