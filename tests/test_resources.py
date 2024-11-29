@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-from aisignal.core.resources import Resource
+from aisignal.core.models import Resource
 
 def test_resource_creation():
     """Test Resource dataclass creation."""
@@ -11,7 +11,7 @@ def test_resource_creation():
         categories=["AI/ML"],
         ranking=0.8,
         summary="Test summary",
-        content="Test content",
+        full_content="Test content",
         datetime=datetime.now(),
         source="https://source.com"
     )

@@ -33,6 +33,11 @@ class APIKeys:
             raise ConfigValidationError(f"Missing required API keys: {missing_keys}")
         return cls(**{k: data[k] for k in required_keys})
 
+    def to_dict(self):
+        return {
+            "jinaai": self.jinaai,
+            "openai": self.openai
+        }
 
 @dataclass
 class ObsidianConfig:
@@ -45,6 +50,11 @@ class ObsidianConfig:
             raise ConfigValidationError("Obsidian configuration missing vault_path")
         return cls(**data)
 
+    def to_dict(self):
+        return {
+            "vault_path": self.vault_path,
+            "template_path": self.template_path
+        }
 
 @dataclass
 class Prompts:
@@ -55,6 +65,11 @@ class Prompts:
         if 'content_extraction' not in data:
             raise ConfigValidationError("Missing content_extraction prompt")
         return cls(**data)
+
+    def to_dict(self):
+        return {
+            "content_extraction": self.content_extraction,
+        }
 
 
 @dataclass
@@ -81,20 +96,18 @@ class AppConfiguration:
     @classmethod
     def load(cls, config_path: Path) -> 'AppConfiguration':
         """Load and validate configuration from file"""
+        if not config_path.exists():
+            raise ConfigFileError(f"Configuration file not found: {config_path}")
+
         try:
-            if not config_path.exists():
-                raise ConfigFileError(f"Configuration file not found: {config_path}")
-
             with open(config_path) as f:
-                try:
-                    data = yaml.safe_load(f)
-                except ParserError as e:
-                    raise ConfigFileError(f"Invalid YAML in configuration file: {e}")
+                data = yaml.safe_load(f)
+        except ParserError as e:
+            raise ConfigError(f"Invalid YAML in configuration file: {e}")
+        except yaml.YAMLError as e:  # Broad exception, for other non-parsing related YAML errors
+            raise ConfigError(f"Failed to load configuration due to YAML error: {e}")
 
-            return cls.from_dict(data)
-
-        except (ConfigError, yaml.YAMLError) as e:
-            raise ConfigError(f"Failed to load configuration: {e}")
+        return cls.from_dict(data)
 
     @staticmethod
     def get_default_config() -> Dict:

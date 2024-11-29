@@ -44,12 +44,13 @@ class ConfigManager:
     def save(self, new_config: dict) -> None:
         """Save updated configuration"""
         # Merge with existing config to preserve any unmodified settings
+
         updated_config = {
             "api_keys": new_config["api_keys"],
             "categories": new_config["categories"],
             "sources": new_config["sources"],
             "obsidian": new_config["obsidian"],
-            "prompts": self.config.prompts  # Preserve existing prompts
+            "prompts": self.config.prompts.to_dict() # Preserve existing prompts
         }
 
         # Create parent directories if they don't exist
