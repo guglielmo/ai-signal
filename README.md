@@ -72,11 +72,13 @@ aisignal run
 ![Main Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
 ### Configuration interface
-[TODO]
+![Configuration Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/configuration.png)
 
 ### Resource detail interface
-[TODO]
+![Resource Detail Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/detail.png)
 
+### Sidebar hidden
+![Sidebar hidden](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/sidebar_hidden.png)
 
 ## Project Status
 
