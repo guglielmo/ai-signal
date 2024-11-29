@@ -1,6 +1,9 @@
-import pytest
 from datetime import datetime
+
+import pytest
+
 from aisignal.core.models import Resource
+
 
 def test_resource_creation():
     """Test Resource dataclass creation."""
@@ -13,7 +16,7 @@ def test_resource_creation():
         summary="Test summary",
         full_content="Test content",
         datetime=datetime.now(),
-        source="https://source.com"
+        source="https://source.com",
     )
     assert resource.id == "1"
     assert resource.title == "Test"

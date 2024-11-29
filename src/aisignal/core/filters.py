@@ -1,23 +1,15 @@
 from dataclasses import dataclass
-from typing import List, Set, Callable
-from textual.widgets import ListView, ListItem
+from typing import Callable, Set
+
 
 @dataclass
 class ResourceFilterState:
     """
-    ResourceFilterState is a data class that is responsible for holding the state of filters
-    applied to resources, including selected categories, selected sources, and a flag indicating
-    whether the resources should be sorted by datetime.
-
-    Attributes:
-        selected_categories (List[str]): A list of categories selected for filtering. Default is an empty list.
-        selected_sources (List[str]): A list of sources selected for filtering. Default is an empty list.
-        sort_by_datetime (bool): A flag to indicate if sorting by datetime is enabled. Default is False.
-
-    Methods:
-        __post_init__:
-            Initializes the selected_categories and selected_sources attributes to empty lists if they are not provided.
+    Represents the state of resource filtering, including selected categories,
+    selected sources, and sorting preference. Notifies changes in filter state
+    via a callback function.
     """
+
     selected_categories: Set[str]
     selected_sources: Set[str]
     sort_by_datetime: bool

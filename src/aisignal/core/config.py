@@ -1,13 +1,16 @@
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 
 import yaml
 
 from .config_schema import AppConfiguration
 
+
 class ConfigManager:
     def __init__(self, config_path: Path = None):
-        self.config_path = config_path or Path.home() / ".config" / "aisignal" / "config.yaml"
+        self.config_path = (
+            config_path or Path.home() / ".config" / "aisignal" / "config.yaml"
+        )
         self.config = self._load_config()
 
     def _load_config(self) -> AppConfiguration:
@@ -50,12 +53,12 @@ class ConfigManager:
             "categories": new_config["categories"],
             "sources": new_config["sources"],
             "obsidian": new_config["obsidian"],
-            "prompts": self.config.prompts.to_dict() # Preserve existing prompts
+            "prompts": self.config.prompts.to_dict(),  # Preserve existing prompts
         }
 
         # Create parent directories if they don't exist
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Save to file
-        with open(self.config_path, 'w') as f:
+        with open(self.config_path, "w") as f:
             yaml.safe_dump(updated_config, f)

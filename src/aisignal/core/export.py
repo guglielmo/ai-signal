@@ -1,32 +1,33 @@
 from pathlib import Path
 from typing import Optional
+
 from .models import Resource
 
 
 class ExportManager:
     """
-    ExportManager manages the export of resources to an Obsidian vault.
+    Handles the export of resources into markdown files suitable for use with
+    Obsidian, a personal knowledge management and note-taking software.
 
-    :param vault_path: Optional path to the Obsidian vault.
-    :param template_path: Optional path to the template file.
-
-    export_to_obsidian exports a given resource to the Obsidian vault.
-
-    :param resource: The Resource object containing the title, content, and URL to be exported.
-    :return: A tuple where the first element is a boolean indicating success and the second element is a message.
-
-    _get_template retrieves the template for exporting resources.
-
-    :return: The template string from the provided template path or a default template.
+    :param vault_path: Path to the Obsidian vault where notes will be saved.
+    :param template_path: Path to a template file, if any, used to format the
+                          exported notes.
     """
+
     def __init__(self, vault_path: Optional[str], template_path: Optional[str]):
         self.vault_path = vault_path
         self.template_path = template_path
 
     def export_to_obsidian(self, resource: Resource) -> tuple[bool, str]:
         """
-        :param resource: The Resource object containing the title, content, and URL to be exported.
-        :return: A tuple where the first element is a boolean indicating success and the second element is a message.
+        :param resource: The resource object containing the information to be exported
+          to an Obsidian markdown file. The resource should have `title`, `content`,
+          and `url` attributes.
+        :return: A tuple where the first element is a boolean indicating success or
+          failure, and the second element is a string message providing more details on
+          the result of the operation. If successful, the message contains the filename
+          where the resource was exported. If unsuccessful, the message contains the
+          error message.
         """
         if not self.vault_path:
             return False, "Obsidian vault path not configured"
@@ -37,9 +38,7 @@ class ExportManager:
             template = self._get_template()
 
             content = template.format(
-                title=resource.title,
-                content=resource.content,
-                url=resource.url
+                title=resource.title, content=resource.content, url=resource.url
             )
 
             file_path.write_text(content)
@@ -50,8 +49,12 @@ class ExportManager:
 
     def _get_template(self) -> str:
         """
-        :return: A string containing the template text from the specified template path,
-                 or a default template string with placeholders for title, content, and URL if the template path does not exist.
+        Retrieves the content of a template file specified by `self.template_path`. If
+        the file exists, its content is returned as a string. If the file does not
+        exist, a default template string is returned.
+
+        :return: The content of the template file if it exists, otherwise a default
+          template string.
         """
         if self.template_path and Path(self.template_path).exists():
             return Path(self.template_path).read_text()

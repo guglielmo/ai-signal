@@ -1,8 +1,7 @@
 from typing import Dict, List, Set
 
-from textual import log
-
 from .models import Resource
+
 
 class ResourceManager:
     def __init__(self):
@@ -30,26 +29,22 @@ class ResourceManager:
         self,
         categories: Set[str] = None,
         sources: Set[str] = None,
-        sort_by_datetime: bool = False
+        sort_by_datetime: bool = False,
     ) -> List[Resource]:
         """Get resources filtered by categories and sources"""
         filtered = self.resources
 
         if categories:
             filtered = [
-                r for r in filtered
-                if any(c in categories for c in r.categories)
+                r for r in filtered if any(c in categories for c in r.categories)
             ]
 
         if sources:
-            filtered = [
-                r for r in filtered
-                if r.source in sources
-            ]
+            filtered = [r for r in filtered if r.source in sources]
 
         # Sort results
         if sort_by_datetime:
             return sorted(filtered, key=lambda r: r.datetime, reverse=True)
-        return sorted(filtered,
-                     key=lambda r: (r.datetime.date(), r.ranking),
-                     reverse=True)
+        return sorted(
+            filtered, key=lambda r: (r.datetime.date(), r.ranking), reverse=True
+        )

@@ -18,6 +18,7 @@ class Resource:
         datetime: Creation/fetch timestamp
         source: Source URL of the content
     """
+
     id: str
     title: str
     url: str

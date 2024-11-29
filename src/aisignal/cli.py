@@ -1,16 +1,20 @@
-import typer
+import os
 from pathlib import Path
 from typing import Optional
+
+import toml
+import typer
 import yaml
 from rich.console import Console
-import toml
-import os
+
+from aisignal.core.config_schema import AppConfiguration
 from .app import ContentCuratorApp
 
 console = Console()
 app = typer.Typer(
     name="aisignal",
-    help="Terminal-based AI curator that turns information noise into meaningful signal",
+    help="Terminal-based AI curator that "
+         "turns information noise into meaningful signal",
     add_completion=False,
 )
 
@@ -18,12 +22,13 @@ CONFIG_DIR = Path.home() / ".config" / "aisignal"
 CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
 
-
 def ensure_config():
     """Ensure config directory and file exist"""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     if not CONFIG_FILE.exists():
+        default_config = AppConfiguration.get_default_config()
         CONFIG_FILE.write_text(yaml.dump(default_config, sort_keys=False))
+
 
 def get_version() -> str:
     """Get version from pyproject.toml"""
@@ -34,16 +39,18 @@ def get_version() -> str:
 
 @app.command()
 def init(
-        force: bool = typer.Option(
-            False,
-            "--force",
-            "-f",
-            help="Force initialization even if config exists",
-        )
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Force initialization even if config exists",
+    )
 ):
     """Initialize AI Signal configuration"""
     if CONFIG_FILE.exists() and not force:
-        console.print("[yellow]Config file already exists. Use --force to overwrite.[/]")
+        console.print(
+            "[yellow]Config file already exists. Use --force to overwrite.[/]"
+        )
         raise typer.Exit()
 
     ensure_config()
@@ -72,7 +79,14 @@ def validate():
 
         # Add validation logic here
         required_fields = [
-            "sources", "prompts", "categories", "quality_threshold", "sync_interval", "api_keys", "obsidian", "social"
+            "sources",
+            "prompts",
+            "categories",
+            "quality_threshold",
+            "sync_interval",
+            "api_keys",
+            "obsidian",
+            "social",
         ]
         for field in required_fields:
             if field not in config:
@@ -105,12 +119,12 @@ def version():
 
 @app.command()
 def run(
-        config_path: Optional[Path] = typer.Option(
-            None,
-            "--config",
-            "-c",
-            help="Path to custom config file",
-        )
+    config_path: Optional[Path] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to custom config file",
+    )
 ):
     """Launch the AI Signal TUI application"""
     if config_path:

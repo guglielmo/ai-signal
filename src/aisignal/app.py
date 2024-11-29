@@ -1,21 +1,22 @@
-from textual.app import App
-
 from pathlib import Path
 from typing import Optional
 
+from textual.app import App
 from textual.binding import Binding
 
 from aisignal.core.filters import ResourceFilterState
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
+
 from .core.config import ConfigManager
 from .core.export import ExportManager
 from .core.resource_manager import ResourceManager
-from .services.content import ContentService
 from .screens import MainScreen
+from .services.content import ContentService
 
 
 class ContentCuratorApp(App):
     """Main application class"""
+
     CSS_PATH = "styles/app.tcss"
     BINDINGS = [
         Binding("q", "quit", "Quit", priority=True),
@@ -40,7 +41,7 @@ class ContentCuratorApp(App):
             )
             self.export_manager = ExportManager(
                 self.config_manager.obsidian_vault_path,
-                self.config_manager.obsidian_template_path
+                self.config_manager.obsidian_template_path,
             )
         except Exception as e:
             self.log.error(f"Failed to initialize app: {str(e)}")
@@ -65,7 +66,9 @@ class ContentCuratorApp(App):
         self.log("Filters updated, refreshing view")
 
         # Find the main screen and update its resource list
-        main_screen = next((s for s in self.screen_stack if isinstance(s, MainScreen)), None)
+        main_screen = next(
+            (s for s in self.screen_stack if isinstance(s, MainScreen)), None
+        )
         if main_screen:
             main_screen.update_resource_list()
 

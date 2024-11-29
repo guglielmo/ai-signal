@@ -1,11 +1,11 @@
 import difflib
+import hashlib
+import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
-import json
-import hashlib
+from typing import Dict, List
 
 from textual import log
 
@@ -13,6 +13,7 @@ from textual import log
 @dataclass
 class ContentDiff:
     """Represents differences between old and new content"""
+
     added_blocks: List[str]  # New content blocks
     removed_blocks: List[str]  # Removed content blocks
     has_changes: bool
@@ -31,14 +32,16 @@ class MarkdownSourceStorage:
             cursor = conn.cursor()
 
             # Store markdown sources
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS sources (
                     url TEXT PRIMARY KEY,
                     markdown_content TEXT NOT NULL,
                     content_hash TEXT NOT NULL,
                     last_updated TIMESTAMP NOT NULL
                 )
-            """)
+            """
+            )
 
             conn.commit()
 
@@ -48,10 +51,7 @@ class MarkdownSourceStorage:
             cursor = conn.cursor()
 
             # Get stored content
-            cursor.execute(
-                "SELECT markdown_content FROM sources WHERE url = ?",
-                (url,)
-            )
+            cursor.execute("SELECT markdown_content FROM sources WHERE url = ?", (url,))
             result = cursor.fetchone()
 
             if not result:
@@ -59,7 +59,7 @@ class MarkdownSourceStorage:
                 return ContentDiff(
                     added_blocks=self._split_into_blocks(new_content),
                     removed_blocks=[],
-                    has_changes=True
+                    has_changes=True,
                 )
 
             stored_content = result[0]
@@ -76,15 +76,15 @@ class MarkdownSourceStorage:
             removed = []
 
             for line in diff:
-                if line.startswith('+ '):
+                if line.startswith("+ "):
                     added.append(line[2:])
-                elif line.startswith('- '):
+                elif line.startswith("- "):
                     removed.append(line[2:])
 
             return ContentDiff(
                 added_blocks=added,
                 removed_blocks=removed,
-                has_changes=bool(added or removed)
+                has_changes=bool(added or removed),
             )
 
     def store_content(self, url: str, content: str):
@@ -93,20 +93,18 @@ class MarkdownSourceStorage:
 
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO sources 
                 (url, markdown_content, content_hash, last_updated)
                 VALUES (?, ?, ?, ?)
-            """, (
-                url,
-                content,
-                content_hash,
-                datetime.now().isoformat()
-            ))
+            """,
+                (url, content, content_hash, datetime.now().isoformat()),
+            )
 
     def _split_into_blocks(self, content: str) -> List[str]:
         """Split content into logical blocks for diffing"""
-        return [b.strip() for b in content.split('\n\n') if b.strip()]
+        return [b.strip() for b in content.split("\n\n") if b.strip()]
 
 
 class ParsedItemStorage:
@@ -122,7 +120,8 @@ class ParsedItemStorage:
             cursor = conn.cursor()
 
             # Store items
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS items (
                     id TEXT PRIMARY KEY,
                     source_url TEXT NOT NULL,
@@ -134,13 +133,16 @@ class ParsedItemStorage:
                     full_content TEXT NOT NULL,
                     FOREIGN KEY (source_url) REFERENCES sources(url)
                 )
-            """)
+            """
+            )
 
             # Index for faster source lookups
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_items_source 
                 ON items(source_url)
-            """)
+            """
+            )
 
             conn.commit()
 
@@ -157,32 +159,33 @@ class ParsedItemStorage:
 
             for item in items:
                 item_id = self._get_item_identifier(item)
-                categories_json = json.dumps(item['categories'])
+                categories_json = json.dumps(item["categories"])
 
                 try:
                     # First check if item exists
-                    cursor.execute(
-                        "SELECT 1 FROM items WHERE id = ?",
-                        (item_id,)
-                    )
+                    cursor.execute("SELECT 1 FROM items WHERE id = ?", (item_id,))
                     if cursor.fetchone():
                         log.info(f"Item {item_id} already exists, skipping")
                         continue
 
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO items 
-                        (id, source_url, title, link, first_seen, categories, summary, full_content)
+                        (id, source_url, title, link, first_seen, categories, 
+                        summary, full_content)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        item_id,
-                        source_url,
-                        item['title'],
-                        item['link'],
-                        current_time,
-                        categories_json,
-                        item.get('summary', ''),  # Use get() with default
-                        item.get('full_content', '')  # Use get() with default
-                    ))
+                    """,
+                        (
+                            item_id,
+                            source_url,
+                            item["title"],
+                            item["link"],
+                            current_time,
+                            categories_json,
+                            item.get("summary", ""),  # Use get() with default
+                            item.get("full_content", ""),  # Use get() with default
+                        ),
+                    )
 
                     # Verify the insert
                     if cursor.rowcount == 1:
@@ -209,17 +212,20 @@ class ParsedItemStorage:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM items 
                 WHERE source_url = ?
                 ORDER BY first_seen DESC
-            """, (source_url,))
+            """,
+                (source_url,),
+            )
 
             items = []
             for row in cursor.fetchall():
                 item = dict(row)
                 # Parse categories from JSON
-                item['categories'] = json.loads(item['categories'])
+                item["categories"] = json.loads(item["categories"])
                 items.append(item)
 
             return items
@@ -233,11 +239,14 @@ class ParsedItemStorage:
             for item in items:
                 item_id = self._get_item_identifier(item)
 
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT 1 FROM items 
                     WHERE id = ? AND source_url = ?
                     LIMIT 1
-                """, (item_id, source_url))
+                """,
+                    (item_id, source_url),
+                )
 
                 if not cursor.fetchone():
                     new_items.append(item)
@@ -250,16 +259,19 @@ class ParsedItemStorage:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM items 
                 WHERE json_extract(categories, '$[*]') LIKE ?
                 ORDER BY first_seen DESC
-            """, (f'%{category}%',))
+            """,
+                (f"%{category}%",),
+            )
 
             items = []
             for row in cursor.fetchall():
                 item = dict(row)
-                item['categories'] = json.loads(item['categories'])
+                item["categories"] = json.loads(item["categories"])
                 items.append(item)
 
             return items

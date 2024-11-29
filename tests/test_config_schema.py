@@ -1,7 +1,15 @@
 # test_config_schema.py
 import pytest
-from aisignal.core.config_schema import APIKeys, ObsidianConfig, ConfigValidationError, Prompts, AppConfiguration, \
-    ConfigFileError, ConfigError
+
+from aisignal.core.config_schema import (
+    APIKeys,
+    AppConfiguration,
+    ConfigError,
+    ConfigFileError,
+    ConfigValidationError,
+    ObsidianConfig,
+    Prompts,
+)
 
 
 def test_apikeys_missing_keys():
@@ -41,7 +49,10 @@ def test_obsidian_config_missing_vault_path():
 
 def test_obsidian_config_no_missing_vault_path():
     # Test case where 'vault_path' is provided
-    valid_data = {"vault_path": "/path/to/vault", "template_path": "/path/to/template.md"}
+    valid_data = {
+        "vault_path": "/path/to/vault",
+        "template_path": "/path/to/template.md",
+    }
 
     try:
         obsidian_config = ObsidianConfig.from_dict(valid_data)
@@ -49,6 +60,7 @@ def test_obsidian_config_no_missing_vault_path():
         assert obsidian_config.template_path == "/path/to/template.md"
     except ConfigValidationError:
         pytest.fail("ConfigValidationError was raised unexpectedly!")
+
 
 def test_apikeys_to_dict():
     # Test APIKeys to_dict method
@@ -61,8 +73,13 @@ def test_apikeys_to_dict():
 
 def test_obsidian_config_to_dict():
     # Test ObsidianConfig to_dict method
-    obsidian_config = ObsidianConfig(vault_path="/path/to/vault", template_path="/path/to/template.md")
-    expected_dict = {"vault_path": "/path/to/vault", "template_path": "/path/to/template.md"}
+    obsidian_config = ObsidianConfig(
+        vault_path="/path/to/vault", template_path="/path/to/template.md"
+    )
+    expected_dict = {
+        "vault_path": "/path/to/vault",
+        "template_path": "/path/to/template.md",
+    }
 
     result = obsidian_config.to_dict()
     assert result == expected_dict, f"Expected {expected_dict}, but got {result}"
@@ -76,6 +93,7 @@ def test_obsidian_config_to_dict_no_template():
 
     result = obsidian_config.to_dict()
     assert result == expected_dict, f"Expected {expected_dict}, but got {result}"
+
 
 def test_prompts_from_dict_missing_content_extraction():
     # Test case where 'content_extraction' is missing
@@ -96,6 +114,7 @@ def test_prompts_from_dict_no_missing_content_extraction():
     except ConfigValidationError:
         pytest.fail("ConfigValidationError was raised unexpectedly!")
 
+
 def test_get_default_config_structure():
     # Define the expected keys in the default configuration
     expected_keys = {"categories", "sources", "api_keys", "prompts", "obsidian"}
@@ -105,7 +124,9 @@ def test_get_default_config_structure():
 
     # Check if all expected keys are present in the default configuration
     for key in expected_keys:
-        assert key in default_config, f"Key '{key}' is missing from the default configuration"
+        assert (
+            key in default_config
+        ), f"Key '{key}' is missing from the default configuration"
 
 
 def test_appconfiguration_from_dict_missing_key():
@@ -115,7 +136,7 @@ def test_appconfiguration_from_dict_missing_key():
         "sources": ["https://example.com"],
         # "api_keys" key is missing
         "prompts": {"content_extraction": "Extract this content"},
-        "obsidian": {"vault_path": "/path/to/vault"}
+        "obsidian": {"vault_path": "/path/to/vault"},
     }
 
     # Attempt to create an AppConfiguration and expect a ConfigValidationError
@@ -140,6 +161,7 @@ def test_appconfiguration_load_yaml_error(tmp_path):
     with pytest.raises(ConfigError) as excinfo:
         AppConfiguration.load(invalid_yaml_path)
     assert "Failed to load configuration due to YAML error" in str(excinfo.value)
+
 
 def test_appconfiguration_load_yaml_parser_error(tmp_path):
     # Create a YAML string that is intentionally malformed
