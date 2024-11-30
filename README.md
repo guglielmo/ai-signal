@@ -80,6 +80,9 @@ aisignal run
 ### Sidebar hidden
 ![Sidebar hidden](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/sidebar_hidden.png)
 
+### Tokens usage and costs
+![Tokens modal](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/tokens_modal.png)
+
 ## Project Status
 
 This project is in its early development stages. 
