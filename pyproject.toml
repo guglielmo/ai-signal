@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ai-signal"
-version = "0.5.2"
+version = "0.5.3"
 description = "Terminal-based AI curator that turns information noise into meaningful signal"
 authors = ["Guglielmo Celata <guglielmo.celata@gmail.com>"]
 license = "MIT"
