@@ -55,7 +55,8 @@ aisignal run
 - `q`: Quit application
 - `c`: Toggle configuration panel
 - `s`: Force sync content
-- `f`: Toggle filters
+- `f`: Toggle filters sidebar
+- `u`: Show usage and costs modal
 
 ### Within the items list
 - `↑`/`↓`: Navigate items

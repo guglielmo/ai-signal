@@ -34,7 +34,7 @@ class BaseScreen(Screen):
     """
 
     BINDINGS = [
-        Binding("t", "show_token_usage", "Token Usage", priority=True),
+        Binding("u", "show_token_usage", "Token Usage", priority=True),
     ]
 
     def compose(self) -> ComposeResult:
