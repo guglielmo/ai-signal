@@ -136,6 +136,12 @@ aisignal version
   - which are the sources most interesting news come from?
   - which are the categories with most news
   - which are the trends
+- [ ] Implement a double thresholds mechanism
+  - all below minimal threshold is not even added to the datatable
+  - all below maximum threshold is accepted as _interesting_
+  - all in between must be further evaluated, by you, with your keyboard
+    - y - accept
+    - n - refuse
 - [ ] Implement feedback loop, based on your selections
   - suggest other interests that you may have
   - highlight waning interests
