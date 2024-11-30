@@ -5,6 +5,7 @@ from textual.app import App
 from textual.binding import Binding
 
 from aisignal.core.filters import ResourceFilterState
+from aisignal.core.token_tracker import TokenTracker
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
 from .core.config import ConfigManager
@@ -52,6 +53,7 @@ class ContentCuratorApp(App):
             self.resource_manager = ResourceManager()
             self.markdown_storage = MarkdownSourceStorage()
             self.item_storage = ParsedItemStorage()
+            self.token_tracker = TokenTracker()
             self.is_syncing = False
             self.content_service = ContentService(
                 jina_api_key=self.config_manager.jina_api_key,
@@ -59,6 +61,7 @@ class ContentCuratorApp(App):
                 categories=self.config_manager.categories,
                 markdown_storage=self.markdown_storage,
                 item_storage=self.item_storage,
+                token_tracker=self.token_tracker,
             )
             self.export_manager = ExportManager(
                 self.config_manager.obsidian_vault_path,

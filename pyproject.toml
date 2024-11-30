@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ai-signal"
-version = "0.4.1"
+version = "0.5.0"
 description = "Terminal-based AI curator that turns information noise into meaningful signal"
 authors = ["Guglielmo Celata <guglielmo.celata@gmail.com>"]
 license = "MIT"
@@ -93,7 +93,7 @@ ensure_newline_before_comments = true
 max-line-length = 88
 extend-ignore = "E203"
 exclude = ".git,__pycache__,build,dist"
-per-file-ignores = "__init__.py:F401,storage.py:W291"
+per-file-ignores = "__init__.py:F401,storage.py:W291,token_tracker.py:W291"
 
 [build-system]
 requires = ["poetry-core"]

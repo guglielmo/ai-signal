@@ -6,6 +6,7 @@ import aiohttp
 import openai
 from textual import log
 
+from aisignal.core.token_tracker import TokenTracker
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
 
@@ -38,6 +39,7 @@ class ContentService:
         categories: List[str],
         markdown_storage: MarkdownSourceStorage,
         item_storage: ParsedItemStorage,
+        token_tracker: TokenTracker,
     ):
         """
         :param jina_api_key: The API key used for authenticating requests to the Jina
@@ -50,12 +52,40 @@ class ContentService:
          the storage and retrieval of markdown content.
         :param item_storage: An instance of ParsedItemStorage used to manage the
          storage and retrieval of parsed items.
+        :param token_tracker: An instance of TokenTracker used to keep track
+         of tokens consumption
         """
         self.jina_api_key = jina_api_key
         self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
         self.categories = categories
         self.markdown_storage = markdown_storage
         self.item_storage = item_storage
+        self.token_tracker = token_tracker
+
+    async def _get_jina_wallet_balance(self) -> Optional[float]:
+        """
+        Fetches the current Jina AI wallet balance.
+
+        :return: Current token balance if successful, None if request fails
+        """
+        try:
+            url = "https://embeddings-dashboard-api.jina.ai/api/v1/api_key/user"
+            headers = {"Authorization": f"Bearer {self.jina_api_key}"}
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    if response.status != 200:
+                        log.error(
+                            f"Failed to fetch Jina wallet balance: {response.status}"
+                        )
+                        return None
+
+                    data = await response.json()
+                    return data.get("wallet", {}).get("total_balance")
+
+        except Exception as e:
+            log.error(f"Error fetching Jina wallet balance: {e}")
+            return None
 
     async def fetch_content(self, url: str) -> Optional[Dict]:
         """
@@ -70,6 +100,10 @@ class ContentService:
             Returns None if fetch fails.
         """
         try:
+
+            # Get initial balance
+            initial_balance = await self._get_jina_wallet_balance()
+
             jina_url = f"https://r.jina.ai/{url}"
             headers = {
                 "Authorization": f"Bearer {self.jina_api_key}",
@@ -84,6 +118,18 @@ class ContentService:
                         return None
 
                     new_content = await response.text()
+
+                    # Get final balance and calculate usage
+                    final_balance = await self._get_jina_wallet_balance()
+                    if (
+                        initial_balance is not None
+                        and final_balance is not None
+                        and final_balance != initial_balance
+                    ):
+                        tokens_used = initial_balance - final_balance
+                        self.token_tracker.add_usage(tokens_used, 0)
+                        log.info(f"Jina AI tokens used for {url}: {tokens_used}")
+
                     title = self._extract_title(new_content)
                     # Get diff from storage
                     content_diff = self.markdown_storage.get_content_diff(
@@ -143,7 +189,10 @@ class ContentService:
             messages=[{"role": "user", "content": full_prompt}],
             temperature=0.7,
         )
-        log.info(f"Total tokens used: {response.usage.total_tokens}")
+        tokens_used = response.usage.total_tokens
+        self.token_tracker.add_usage(0, tokens_used)
+        log.info(f"Total tokens used: {tokens_used}")
+
         parsed_items = self._parse_markdown_items(response.choices[0].message.content)
 
         # Filter out already stored items

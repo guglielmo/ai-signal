@@ -1,12 +1,12 @@
 import asyncio
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
 from textual.reactive import Reactive
-from textual.screen import Screen
+from textual.screen import ModalScreen, Screen
 from textual.widgets import (
     Button,
     DataTable,
@@ -32,6 +32,10 @@ class BaseScreen(Screen):
     header and footer, while requiring subclasses to define the main content
     area.
     """
+
+    BINDINGS = [
+        Binding("t", "show_token_usage", "Token Usage", priority=True),
+    ]
 
     def compose(self) -> ComposeResult:
         """
@@ -73,6 +77,10 @@ class BaseScreen(Screen):
         :return: The ContentCuratorApp instance for the current object.
         """
         return super().app  # type: ignore
+
+    def action_show_token_usage(self) -> None:
+        """Show the token usage modal when 't' is pressed"""
+        self.app.push_screen(TokenUsageModal())
 
 
 # Main screen containing the primary app functionality
@@ -327,8 +335,14 @@ class MainScreen(BaseScreen):
 
             self.app.resource_manager.add_resources(new_resources)
             self.update_resource_list()
+
+            total_usage = self.app.token_tracker.get_total_usage()
+            session_usage = self.app.token_tracker.get_session_usage()
             self.app.notify_user(
-                f"Sync completed. Added {len(new_resources)} resources"
+                f"Sync completed. Session usage: Jina: {session_usage.jina_tokens}, "
+                f"OpenAI: {session_usage.openai_tokens}. "
+                f"Total usage: Jina: {total_usage.jina_tokens}, "
+                f"OpenAI: {total_usage.openai_tokens}."
             )
         finally:
             self.is_syncing = False
@@ -744,3 +758,68 @@ class AddItemScreen(Screen):
                 self.app.pop_screen()
         elif event.button.id == "cancel":
             self.app.pop_screen()
+
+
+class TokenUsageModal(ModalScreen[None]):
+    """
+    Modal screen displaying token usage statistics.
+    Shows both current session and total historical usage for both Jina AI and OpenAI.
+    """
+
+    BINDINGS = [Binding("escape", "app.pop_screen", "Close")]
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Label("Token Usage Statistics", classes="modal-title")
+
+            with Container():
+                # Session usage
+                yield Label("Current Session", classes="section-header")
+                session_table = DataTable(id="session_usage")
+                session_table.add_columns(
+                    "Service", "Tokens Used", "Estimated Cost ($)"
+                )
+                yield session_table
+
+                # Historical usage
+                yield Label("Historical Usage", classes="section-header")
+                total_table = DataTable(id="total_usage")
+                total_table.add_columns("Service", "Total Tokens", "Total Cost ($)")
+                yield total_table
+
+            # footer with bindings
+            yield Footer()
+
+    def on_mount(self) -> None:
+        app = cast("ContentCuratorApp", self.app)
+        """Update tables with current token usage data"""
+        session_usage = app.token_tracker.get_session_usage()
+        total_usage = app.token_tracker.get_total_usage()
+
+        # Update session usage table
+        session_table = self.query_one("#session_usage", DataTable)
+        session_table.clear()
+        session_table.add_row(
+            "Jina AI",
+            f"{session_usage.jina_tokens:,}",
+            f"${(session_usage.jina_tokens * 0.00001):,.4f}",
+        )
+        session_table.add_row(
+            "OpenAI",
+            f"{session_usage.openai_tokens:,}",
+            f"${(session_usage.openai_tokens * 0.00002):,.4f}",
+        )
+
+        # Update total usage table
+        total_table = self.query_one("#total_usage", DataTable)
+        total_table.clear()
+        total_table.add_row(
+            "Jina AI",
+            f"{total_usage.jina_tokens:,}",
+            f"${(total_usage.jina_tokens * 0.00001):,.4f}",
+        )
+        total_table.add_row(
+            "OpenAI",
+            f"{total_usage.openai_tokens:,}",
+            f"${(total_usage.openai_tokens * 0.00002):,.4f}",
+        )
