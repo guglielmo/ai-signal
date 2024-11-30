@@ -206,6 +206,7 @@ class ParsedItemStorage:
                     categories TEXT NOT NULL,
                     summary TEXT NOT NULL,
                     full_content TEXT NOT NULL,
+                    ranking INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY (source_url) REFERENCES sources(url)
                 )
             """
@@ -265,8 +266,8 @@ class ParsedItemStorage:
                         """
                         INSERT INTO items 
                         (id, source_url, title, link, first_seen, categories, 
-                        summary, full_content)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        summary, full_content, ranking)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                         (
                             item_id,
@@ -277,6 +278,7 @@ class ParsedItemStorage:
                             categories_json,
                             item.get("summary", ""),  # Use get() with default
                             item.get("full_content", ""),  # Use get() with default
+                            item["ranking"],
                         ),
                     )
 

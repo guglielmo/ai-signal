@@ -1,3 +1,4 @@
+import ast
 import re
 from typing import Dict, List, Optional
 
@@ -217,6 +218,16 @@ class ContentService:
                     ]
                 elif line.startswith("**Summary:**"):
                     current_item["summary"] = line.replace("**Summary:**", "").strip()
+                elif line.startswith("**Rankings:**"):
+                    values = ast.literal_eval(line.replace("**Rankings:**", "").strip())
+                    if len(values) != 3:
+                        log.warning(
+                            f"Invalid rankings for {current_item['title']}: {values}"
+                        )
+                        continue
+                    v1, v2, v3 = values
+                    w_avg = v1 * 30 + v2 * 50 + v3 * 20
+                    current_item["ranking"] = round(w_avg)
 
         if current_item:
             items.append(current_item)

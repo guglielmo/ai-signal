@@ -180,7 +180,7 @@ class MainScreen(BaseScreen):
                         title=item["title"],
                         url=item["link"],
                         categories=item["categories"],
-                        ranking=0.0,
+                        ranking=item["ranking"],
                         summary=item["summary"],
                         full_content=item["full_content"],
                         datetime=datetime.fromisoformat(item["first_seen"]),
@@ -309,7 +309,7 @@ class MainScreen(BaseScreen):
                                 title=item["title"],
                                 url=item["link"],
                                 categories=item["categories"],
-                                ranking=0.0,
+                                ranking=item["ranking"],
                                 summary=item["summary"],
                                 full_content="",
                                 datetime=datetime.strptime(
