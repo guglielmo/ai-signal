@@ -4,6 +4,20 @@
 
 Terminal-based AI curator that turns information noise into meaningful signal.
 
+AI Signal is a powerful tool designed to help you regain control over your information diet in today's 
+overwhelming digital landscape. While existing platforms and algorithms decide what content reaches you, 
+AI Signal empowers you to define and implement your own content curation strategy.
+
+By leveraging AI capabilities and your personal preferences, it transforms the constant 
+stream of information into meaningful, relevant insights that matter to you. 
+You define the categories, quality thresholds, and filtering criteria, ensuring that the content you consume 
+aligns with your interests and goals.
+
+Think of it as your personal content curator that works tirelessly to surface valuable information 
+while filtering out noise, all running locally on your machine. 
+With AI Signal, you're not just consuming content – you're actively shaping how information reaches you, 
+making conscious choices about what deserves your attention.
+
 ## Features
 
 - 🤖 AI-powered content analysis and categorization
@@ -118,11 +132,19 @@ aisignal version
 
 ## Roadmap
 - [ ] Add support for more content sources (YT videos, podcasts, pdf)
-- [ ] Implement custom AI models
+- [ ] Add statistics on most used sources and categories 
+  - which are the sources most interesting news come from?
+  - which are the categories with most news
+  - which are the trends
+- [ ] Implement feedback loop, based on your selections
+  - suggest other interests that you may have
+  - highlight waning interests
+- [ ] Implement custom AI models (Anthropic, Ollama, Gemini, ...)
 - [ ] Add content archiving
+  - read/unread items, filter by read/unread status
+  - remove items
 - [ ] Enable custom prompts for sources
 - [ ] Enable custom filtering rules
-- [ ] Add data export/import
 
 ## License
 
