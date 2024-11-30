@@ -24,6 +24,7 @@ class ResourceManager:
                                         to integer indices.
         """
         self.resources: List[Resource] = []
+        self.filtered_resources: List[Resource] = []
         self.row_key_map: Dict[str, int] = {}  # DataTable row keys are strings
 
     def add_resources(self, resources: List[Resource]) -> None:
@@ -67,7 +68,7 @@ class ResourceManager:
         :return: The `Resource` object associated with the specified `row_key`.
         :raises KeyError: If the `row_key` does not exist in the row_key_map.
         """
-        return self.resources[self.row_key_map[row_key]]
+        return self.filtered_resources[self.row_key_map[row_key]]
 
     def get_filtered_resources(
         self,

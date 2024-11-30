@@ -376,6 +376,7 @@ class MainScreen(BaseScreen):
             sources=self.app.filter_state.selected_sources,
             sort_by_datetime=self.app.filter_state.sort_by_datetime,
         )
+        self.app.resource_manager.filtered_resources = filtered_resources
 
         # Update table
         for i, resource in enumerate(filtered_resources):
