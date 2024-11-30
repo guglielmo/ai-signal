@@ -59,40 +59,44 @@ ShareScreen {
 
 TokenUsageModal {
     align: center middle;
-    height: auto;
-    background: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
+    background: rgba(0, 0, 0, 0.5);
 }
 
 TokenUsageModal > Vertical {
     background: $surface;
     padding: 1 2;
     width: 60;
-    min-height: 20;  /* Set a minimum height */
-    max-height: 40;  /* Set a maximum height to prevent overflow */
-    height: auto;   /* Let height be determined by content */
+    min-height: 20;
+    max-height: 40;
+    height: auto;
     border: heavy $primary;
     opacity: 0.9;
 }
 
 TokenUsageModal .modal-title {
     width: 100%;
-    text-align: center;
+    content-align: center middle;
     text-style: bold;
     padding-bottom: 1;
 }
 
 TokenUsageModal .section-header {
-    margin-top: 2;
-    margin-bottom: 1;
+    margin-top: 1;
+    margin-bottom: 0;
     color: $text;
     text-style: bold;
 }
 
+TokenUsageModal .subsection-header {
+    margin-top: 1;
+    margin-bottom: 0;
+    color: $text-muted;
+    padding-left: 1;
+}
+
 TokenUsageModal DataTable {
     height: auto;
-    width: 80%;
-    margin: 1 0;
-    /* Make tables more readable */
+    margin: 0 1 1 1;
     background: rgba(0, 0, 0, 0.1);
 }
 

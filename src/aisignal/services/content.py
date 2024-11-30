@@ -69,11 +69,13 @@ class ContentService:
         :return: Current token balance if successful, None if request fails
         """
         try:
-            url = "https://embeddings-dashboard-api.jina.ai/api/v1/api_key/user"
-            headers = {"Authorization": f"Bearer {self.jina_api_key}"}
+            url = (
+                f"https://embeddings-dashboard-api.jina.ai/api/v1/api_key/user"
+                f"?api_key={self.jina_api_key}"
+            )
 
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
+                async with session.get(url) as response:
                     if response.status != 200:
                         log.error(
                             f"Failed to fetch Jina wallet balance: {response.status}"
@@ -101,9 +103,6 @@ class ContentService:
         """
         try:
 
-            # Get initial balance
-            initial_balance = await self._get_jina_wallet_balance()
-
             jina_url = f"https://r.jina.ai/{url}"
             headers = {
                 "Authorization": f"Bearer {self.jina_api_key}",
@@ -118,19 +117,18 @@ class ContentService:
                         return None
 
                     new_content = await response.text()
-
-                    # Get final balance and calculate usage
-                    final_balance = await self._get_jina_wallet_balance()
-                    if (
-                        initial_balance is not None
-                        and final_balance is not None
-                        and final_balance != initial_balance
-                    ):
-                        tokens_used = initial_balance - final_balance
-                        self.token_tracker.add_usage(tokens_used, 0)
-                        log.info(f"Jina AI tokens used for {url}: {tokens_used}")
+                    estimated_tokens = self.token_tracker.estimate_jina_tokens(
+                        new_content
+                    )
+                    self.token_tracker.add_jina_usage(new_content)
+                    log.info(
+                        f"JinaAI tokens for {url}: "
+                        f"{estimated_tokens:,} tokens "
+                        f"(${(estimated_tokens * 0.02 / 1_000_000):.6f})"
+                    )
 
                     title = self._extract_title(new_content)
+
                     # Get diff from storage
                     content_diff = self.markdown_storage.get_content_diff(
                         url, new_content
@@ -146,7 +144,8 @@ class ContentService:
                         "content": new_content,
                         "diff": content_diff,
                     }
-        except Exception:
+        except Exception as e:
+            log.error(f"Fetch error: {e}")
             return None
 
     async def analyze_content(
@@ -189,9 +188,26 @@ class ContentService:
             messages=[{"role": "user", "content": full_prompt}],
             temperature=0.7,
         )
-        tokens_used = response.usage.total_tokens
-        self.token_tracker.add_usage(0, tokens_used)
-        log.info(f"Total tokens used: {tokens_used}")
+
+        # Track and log token usage with costs
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+
+        prompt_cost = prompt_tokens * 0.15 / 1_000_000
+        completion_cost = completion_tokens * 0.60 / 1_000_000
+        total_cost = prompt_cost + completion_cost
+
+        log.info(
+            f"OpenAI tokens for {content_result['url']}:\n"
+            f"  Input:  {prompt_tokens:,} tokens (${prompt_cost:.6f})\n"
+            f"  Output: {completion_tokens:,} tokens (${completion_cost:.6f})\n"
+            f"  Total:  {total_tokens:,} tokens (${total_cost:.6f})"
+        )
+
+        self.token_tracker.add_openai_usage(
+            response.usage.prompt_tokens, response.usage.completion_tokens
+        )
 
         parsed_items = self._parse_markdown_items(response.choices[0].message.content)
 

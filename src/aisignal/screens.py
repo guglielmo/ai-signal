@@ -336,14 +336,6 @@ class MainScreen(BaseScreen):
             self.app.resource_manager.add_resources(new_resources)
             self.update_resource_list()
 
-            total_usage = self.app.token_tracker.get_total_usage()
-            session_usage = self.app.token_tracker.get_session_usage()
-            self.app.notify_user(
-                f"Sync completed. Session usage: Jina: {session_usage.jina_tokens}, "
-                f"OpenAI: {session_usage.openai_tokens}. "
-                f"Total usage: Jina: {total_usage.jina_tokens}, "
-                f"OpenAI: {total_usage.openai_tokens}."
-            )
         finally:
             self.is_syncing = False
             progress.styles.visibility = "hidden"
@@ -378,10 +370,14 @@ class MainScreen(BaseScreen):
         )
         self.app.resource_manager.filtered_resources = filtered_resources
 
+        def truncate_text(text: str, max_length: int = 50) -> str:
+            """Truncates text to specified length, adding ellipsis if needed."""
+            return text[:max_length] + "..." if len(text) > max_length else text
+
         # Update table
         for i, resource in enumerate(filtered_resources):
             row_key = table.add_row(
-                resource.title,
+                truncate_text(resource.title),
                 resource.source,
                 ", ".join(resource.categories),
                 f"{resource.ranking:.2f}",
@@ -777,50 +773,72 @@ class TokenUsageModal(ModalScreen[None]):
                 # Session usage
                 yield Label("Current Session", classes="section-header")
                 session_table = DataTable(id="session_usage")
-                session_table.add_columns(
-                    "Service", "Tokens Used", "Estimated Cost ($)"
-                )
+                session_table.add_columns("Service", "Tokens", "Cost ($)")
                 yield session_table
 
                 # Historical usage
                 yield Label("Historical Usage", classes="section-header")
                 total_table = DataTable(id="total_usage")
-                total_table.add_columns("Service", "Total Tokens", "Total Cost ($)")
+                total_table.add_columns("Service", "Tokens", "Cost ($)")
                 yield total_table
 
-            # footer with bindings
             yield Footer()
 
     def on_mount(self) -> None:
-        app = cast("ContentCuratorApp", self.app)
         """Update tables with current token usage data"""
+        app = cast("ContentCuratorApp", self.app)
         session_usage = app.token_tracker.get_session_usage()
         total_usage = app.token_tracker.get_total_usage()
 
-        # Update session usage table
+        # Current session table
         session_table = self.query_one("#session_usage", DataTable)
         session_table.clear()
         session_table.add_row(
             "Jina AI",
             f"{session_usage.jina_tokens:,}",
-            f"${(session_usage.jina_tokens * 0.00001):,.4f}",
+            f"${session_usage.jina_cost:.6f}",
         )
         session_table.add_row(
-            "OpenAI",
-            f"{session_usage.openai_tokens:,}",
-            f"${(session_usage.openai_tokens * 0.00002):,.4f}",
+            "OpenAI (Input)",
+            f"{session_usage.openai_input_tokens:,}",
+            f"${session_usage.openai_input_cost:.6f}",
+        )
+        session_table.add_row(
+            "OpenAI (Output)",
+            f"{session_usage.openai_output_tokens:,}",
+            f"${session_usage.openai_output_cost:.6f}",
+        )
+        session_table.add_row(
+            "Total",
+            f"""{(session_usage.jina_tokens + 
+                session_usage.openai_input_tokens + 
+                session_usage.openai_output_tokens):,}
+            """,
+            f"${session_usage.cost:.6f}",
         )
 
-        # Update total usage table
+        # Historical usage table
         total_table = self.query_one("#total_usage", DataTable)
         total_table.clear()
         total_table.add_row(
-            "Jina AI",
-            f"{total_usage.jina_tokens:,}",
-            f"${(total_usage.jina_tokens * 0.00001):,.4f}",
+            "Jina AI", f"{total_usage.jina_tokens:,}", f"${total_usage.jina_cost:.6f}"
         )
         total_table.add_row(
-            "OpenAI",
-            f"{total_usage.openai_tokens:,}",
-            f"${(total_usage.openai_tokens * 0.00002):,.4f}",
+            "OpenAI (Input)",
+            f"{total_usage.openai_input_tokens:,}",
+            f"${total_usage.openai_input_cost:.6f}",
+        )
+        total_table.add_row(
+            "OpenAI (Output)",
+            f"{total_usage.openai_output_tokens:,}",
+            f"${total_usage.openai_output_cost:.6f}",
+        )
+        total_table.add_row(
+            "Total",
+            f"""{
+                total_usage.jina_tokens + 
+                total_usage.openai_input_tokens + 
+                total_usage.openai_output_tokens:,}
+            """,
+            f"${total_usage.cost:.6f}",
         )
