@@ -98,11 +98,13 @@ class MainScreen(BaseScreen):
         Binding("f", "toggle_filters", "Filters"),
         Binding("c", "toggle_config", "Config"),
         Binding("s", "sync", "Sync"),
+        Binding("r", "reset_filters", "Reset Filters"),  # New keyboard shortcut
     ]
 
     def __init__(self):
         super().__init__()
         self.is_syncing = False
+        self._filters_active = False
 
     def compose_content(self) -> ComposeResult:
         """
@@ -229,6 +231,47 @@ class MainScreen(BaseScreen):
             if url in self.app.filter_state.selected_sources:
                 item.add_class("-selected")
             source_list.append(item)
+
+    def _update_filter_state(self) -> None:
+        """Update the visual indicators for active filters"""
+        has_active_filters = bool(self.app.filter_state.selected_categories) or bool(
+            self.app.filter_state.selected_sources
+        )
+
+        if has_active_filters != self._filters_active:
+            self._filters_active = has_active_filters
+
+            # Update filter section headers to show active state
+            cat_label = self.query_one("Label:contains('Categories')", Label)
+            src_label = self.query_one("Label:contains('Sources')", Label)
+
+            if has_active_filters:
+                cat_label.add_class("filters-active")
+                src_label.add_class("filters-active")
+            else:
+                cat_label.remove_class("filters-active")
+                src_label.remove_class("filters-active")
+
+    def action_reset_filters(self) -> None:
+        """Handle reset filters action from keyboard shortcut"""
+        self.app.filter_state.reset()
+
+        category_list = self.query_one("#category_filter", ListView)
+        source_list = self.query_one("#source_filter", ListView)
+
+        # Remove selection from all items
+        for list_view in (category_list, source_list):
+            for item in list_view.children:
+                if item.has_class("-selected"):
+                    item.remove_class("-selected")
+
+        # Update the resource list with no filters
+        self.update_resource_list()
+
+        # Return focus to resource list
+        self.query_one("#resource_list").focus()
+
+        self.app.notify("Filters reset")
 
     def action_toggle_filters(self) -> None:
         """
@@ -388,7 +431,7 @@ class MainScreen(BaseScreen):
         # Log filter status
         self.log(f"Showing {len(filtered_resources)} resources after filtering")
 
-    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
         """
         Handles the event triggered when a list view item is highlighted. The method
         receives an event of type `ListView.Highlighted` which contains details
@@ -397,8 +440,19 @@ class MainScreen(BaseScreen):
         :param event: The event containing information about the highlighted item.
         :type event: ListView.Highlighted
         """
-        # Implementation remains the same as in original app
-        pass
+        list_view = event.list_view
+        item = event.item
+        label: Label = cast(Label, item.children[0])
+
+        if list_view.id == "category_filter":
+            category = label.renderable  # Get text from the Label widget
+            self.app.filter_state.toggle_category(category)
+            item.toggle_class("-selected")
+
+        elif list_view.id == "source_filter":
+            source = label.renderable
+            self.app.filter_state.toggle_source(source)
+            item.toggle_class("-selected")
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """

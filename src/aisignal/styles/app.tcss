@@ -27,13 +27,6 @@ ListView {
     margin: 1;
 }
 
-#sync_status {
-    width: 100%;
-    height: auto;
-    background: $surface;
-    dock: bottom;
-}
-
 ProgressBar {
     width: 100%;
     height: 1;
@@ -106,4 +99,20 @@ TokenUsageModal Footer {
     dock: bottom;
     height: 1;
     padding: 0 1;
+}
+
+
+ListView > ListItem.-selected {
+    background: $accent;
+    color: $text;
+}
+
+
+/* Adjust sync status to accommodate button */
+#sync_status {
+    width: 100%;
+    height: auto;
+    background: $surface;
+    dock: bottom;
+    margin-top: 1;
 }
