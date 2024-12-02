@@ -82,6 +82,14 @@ class ContentCuratorApp(App):
         """
         self.push_screen(MainScreen())
 
+    def update_main_screen(self) -> None:
+        """Find main screen in stack and update its resource list"""
+        main_screen = next(
+            (s for s in self.screen_stack if isinstance(s, MainScreen)), None
+        )
+        if main_screen:
+            main_screen.update_resource_list()
+
     def notify_user(self, message: str) -> None:
         """
         Sends a notification message to the user.

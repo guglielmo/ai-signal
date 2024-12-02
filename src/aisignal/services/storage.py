@@ -317,7 +317,7 @@ class ParsedItemStorage:
             cursor.execute(
                 """
                 SELECT * FROM items 
-                WHERE source_url = ?
+                WHERE source_url = ? AND removed = 0
                 ORDER BY first_seen DESC
             """,
                 (source_url,),
@@ -355,7 +355,7 @@ class ParsedItemStorage:
                 cursor.execute(
                     """
                     SELECT 1 FROM items 
-                    WHERE id = ? AND source_url = ?
+                    WHERE id = ? AND source_url = ? and removed = 0
                     LIMIT 1
                 """,
                     (item_id, source_url),
@@ -381,7 +381,7 @@ class ParsedItemStorage:
             cursor.execute(
                 """
                 SELECT * FROM items 
-                WHERE json_extract(categories, '$[*]') LIKE ?
+                WHERE json_extract(categories, '$[*]') LIKE ? and removed = 0
                 ORDER BY first_seen DESC
             """,
                 (f"%{category}%",),

@@ -191,5 +191,7 @@ class ResourceDetailScreen(BaseScreen):
     def action_remove(self) -> None:
         """Mark resource as removed."""
         self.app.item_storage.mark_as_removed(self.resource.id)
+        self.app.resource_manager.remove_resource(self.resource.id)
         self.app.notify(f"Removed resource: {self.resource.title}")
+        self.app.update_main_screen()
         self.app.pop_screen()

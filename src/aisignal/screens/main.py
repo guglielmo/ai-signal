@@ -95,6 +95,11 @@ class MainScreen(BaseScreen):
         # give the focus to the data table
         table.focus()
 
+    def _on_screen_resume(self) -> None:
+        """Called when main screen becomes active again after being suspended"""
+        super()._on_screen_resume()
+        self.update_resource_list()
+
     def _load_stored_items(self) -> None:
         """
         Loads stored items from configured sources, processes them into Resource
@@ -305,7 +310,11 @@ class MainScreen(BaseScreen):
                                 ),
                                 source=item["source_url"],
                             )
-                            new_resources.append(resource)
+                            if (
+                                resource.ranking
+                                >= self.app.content_service.min_threshold
+                            ):
+                                new_resources.append(resource)
                         except Exception as e:
                             self.app.log.error(f"Error: {item} {e}")
                             continue
@@ -350,20 +359,25 @@ class MainScreen(BaseScreen):
         )
         self.app.resource_manager.filtered_resources = filtered_resources
 
-        def get_color_style(ranking: float) -> str:
+        def get_color_style(ranking: float, has_full_content: bool = False) -> str:
             """Get text color based on ranking."""
             min_threshold = self.app.content_service.min_threshold
             max_threshold = self.app.content_service.max_threshold
 
             if ranking >= max_threshold:
                 # Green color background for high quality
-                return "rgb(0,200,16)"
+                color = "rgb(0,200,16)"
             elif ranking >= min_threshold:
                 # Orange background for medium quality
-                return "rgb(255,176,0)"
+                color = "rgb(255,176,0)"
             else:
                 # Gray quality for low quality
-                return "rgb(100,100,100)"
+                color = "rgb(100,100,100)"
+
+            if has_full_content:
+                color = f"{color} bold"
+
+            return color
 
         def truncate_text(text: str, max_length: int = 50) -> str:
             """Truncates text to specified length, adding ellipsis if needed."""
@@ -371,13 +385,13 @@ class MainScreen(BaseScreen):
 
         # Update table
         for i, resource in enumerate(filtered_resources):
-            ranging_color = f"{get_color_style(resource.ranking)}"
+            ranking_color = get_color_style(resource.ranking, resource.full_content)
             row_key = table.add_row(
-                Text(truncate_text(resource.title), style=ranging_color),
-                Text(resource.source, style=ranging_color),
-                Text(", ".join(resource.categories), style=ranging_color),
-                Text(f"{resource.ranking:.2f}", style=ranging_color),
-                Text(resource.datetime.strftime("%Y-%m-%d %H:%M"), style=ranging_color),
+                Text(truncate_text(resource.title), style=ranking_color),
+                Text(resource.source, style=ranking_color),
+                Text(", ".join(resource.categories), style=ranking_color),
+                Text(f"{resource.ranking:.2f}", style=ranking_color),
+                Text(resource.datetime.strftime("%Y-%m-%d %H:%M"), style=ranking_color),
                 key=str(i),
             )
             self.app.resource_manager.add_row_key(row_key, i)

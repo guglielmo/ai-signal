@@ -1,5 +1,7 @@
 from typing import Dict, List, Set
 
+from textual import log
+
 from .models import Resource
 
 
@@ -70,6 +72,13 @@ class ResourceManager:
         """
         return self.filtered_resources[self.row_key_map[row_key]]
 
+    def remove_resource(self, resource_id: str) -> None:
+        """Remove resource from the list by marking it as removed"""
+        for resource in self.resources:
+            if resource.id == resource_id:
+                resource.removed = True
+                break
+
     def get_filtered_resources(
         self,
         categories: Set[str] = None,
@@ -89,7 +98,8 @@ class ResourceManager:
          then ranking, both in descending order.
         :return: A list of filtered and possibly sorted Resource objects.
         """
-        filtered = self.resources
+        filtered = [r for r in self.resources if not r.removed]
+        log.debug(f"resources: {len(filtered)}")
 
         if categories:
             filtered = [
