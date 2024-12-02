@@ -90,6 +90,23 @@ class ConfigManager:
         """
         return self.config.api_keys.jinaai
 
+    @property
+    def min_threshold(self) -> float:
+        """
+        Returns the minimum threshold value set in the current configuration.
+
+        :return: The minimum threshold as a float.
+        """
+        return self.config.min_threshold
+
+    @property
+    def max_threshold(self) -> float:
+        """Gets the maximum threshold value from the current configuration.
+
+        :return: The maximum threshold value as a float.
+        """
+        return self.config.max_threshold
+
     def save(self, new_config: dict) -> None:
         """
         Saves a new configuration by merging it with the existing configuration to
@@ -108,6 +125,9 @@ class ConfigManager:
             "categories": new_config["categories"],
             "sources": new_config["sources"],
             "obsidian": new_config["obsidian"],
+            "sync_interval": new_config["sync_interval"],
+            "max_threshold": new_config["max_threshold"],
+            "min_threshold": new_config["min_threshold"],
             "prompts": self.config.prompts.to_dict(),  # Preserve existing prompts
         }
 

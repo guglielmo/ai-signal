@@ -28,3 +28,5 @@ class Resource:
     full_content: str
     datetime: datetime
     source: str
+    removed: bool = False
+    notes: str = ""

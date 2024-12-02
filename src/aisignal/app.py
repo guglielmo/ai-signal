@@ -6,12 +6,12 @@ from textual.binding import Binding
 
 from aisignal.core.filters import ResourceFilterState
 from aisignal.core.token_tracker import TokenTracker
+from aisignal.screens.main import MainScreen
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
 from .core.config import ConfigManager
 from .core.export import ExportManager
 from .core.resource_manager import ResourceManager
-from .screens import MainScreen
 from .services.content import ContentService
 
 
@@ -62,6 +62,8 @@ class ContentCuratorApp(App):
                 markdown_storage=self.markdown_storage,
                 item_storage=self.item_storage,
                 token_tracker=self.token_tracker,
+                min_threshold=self.config_manager.min_threshold,
+                max_threshold=self.config_manager.max_threshold,
             )
             self.export_manager = ExportManager(
                 self.config_manager.obsidian_vault_path,

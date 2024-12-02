@@ -6,7 +6,7 @@ import aiohttp
 import openai
 from textual import log
 
-from aisignal.core.token_tracker import TokenTracker
+from aisignal.core.token_tracker import COST_PER_MILLION, TokenTracker
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
 
@@ -40,20 +40,29 @@ class ContentService:
         markdown_storage: MarkdownSourceStorage,
         item_storage: ParsedItemStorage,
         token_tracker: TokenTracker,
+        min_threshold: float,  # New parameter
+        max_threshold: float,  # New parameter
     ):
         """
-        :param jina_api_key: The API key used for authenticating requests to the Jina
-         application.
-        :param openai_api_key: The API key used for authenticating requests to the
-         OpenAI API.
-        :param categories: A list of category names that the instance will use for
-         classification or categorization.
-        :param markdown_storage: An instance of MarkdownSourceStorage used to manage
-         the storage and retrieval of markdown content.
-        :param item_storage: An instance of ParsedItemStorage used to manage the
-         storage and retrieval of parsed items.
-        :param token_tracker: An instance of TokenTracker used to keep track
-         of tokens consumption
+        Initializes the class with the necessary API keys, category list,
+         storage options, token tracker, and threshold values.
+
+        :param jina_api_key:
+          The API key required to access Jina services.
+        :param openai_api_key:
+          The API key needed to connect to OpenAI services for API operations.
+        :param categories:
+          A list of categories used for classifying or organizing data.
+        :param markdown_storage:
+          An instance of MarkdownSourceStorage for handling markdown data.
+        :param item_storage:
+          An instance of ParsedItemStorage for managing parsed items.
+        :param token_tracker:
+          A TokenTracker instance used to track or manage API token usage.
+        :param min_threshold:
+          The minimum threshold value for a specific operation or configuration.
+        :param max_threshold:
+          The maximum threshold value for a specific operation or configuration.
         """
         self.jina_api_key = jina_api_key
         self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
@@ -61,6 +70,8 @@ class ContentService:
         self.markdown_storage = markdown_storage
         self.item_storage = item_storage
         self.token_tracker = token_tracker
+        self.min_threshold = min_threshold
+        self.max_threshold = max_threshold
 
     async def _get_jina_wallet_balance(self) -> Optional[float]:
         """
@@ -148,6 +159,52 @@ class ContentService:
             log.error(f"Fetch error: {e}")
             return None
 
+    # In content.py, add to ContentService class
+
+    async def _fetch_full_content(self, url: str) -> Optional[str]:
+        """
+        Fetches the full content of a URL and converts it to markdown using Jina AI.
+
+        :param url: The URL of the content to fetch
+        :return: Markdown content if successful, None otherwise
+        """
+        try:
+            jina_url = f"https://r.jina.ai/{url}"
+            headers = {
+                "Authorization": f"Bearer {self.jina_api_key}",
+                "X-No-Gfm": "true",  # No GitHub-flavored markdown
+                "X-Retain-Images": "none",  # Don't include images
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(jina_url, headers=headers) as response:
+                    if response.status != 200:
+                        log.error(
+                            "Jina AI error fetching full content: "
+                            f"{response.status} {response.reason}"
+                        )
+                        return None
+
+                    content = await response.text()
+
+                    # Track token usage for this additional API call
+                    estimated_tokens = self.token_tracker.estimate_jina_tokens(content)
+                    self.token_tracker.add_jina_usage(content)
+                    estimated_cost = (
+                        estimated_tokens * COST_PER_MILLION["jina"] / 1_000_000
+                    )
+                    log.info(
+                        f"JinaAI tokens for full content of {url}: "
+                        f"{estimated_tokens:,} tokens "
+                        f"(${estimated_cost:.6f})"
+                    )
+
+                    return content
+
+        except Exception as e:
+            log.error(f"Error fetching full content from {url}: {e}")
+            return None
+
     async def analyze_content(
         self, content_result: Dict, prompt_template: str
     ) -> List[Dict]:
@@ -211,9 +268,25 @@ class ContentService:
 
         parsed_items = self._parse_markdown_items(response.choices[0].message.content)
 
+        # Filter by minimum threshold and fetch full content for high-quality items
+        quality_items = []
+
+        for item in parsed_items:
+            if item["ranking"] >= self.min_threshold:
+                if item["ranking"] >= self.max_threshold:
+                    # Fetch full content for high-quality items
+                    full_content = await self._fetch_full_content(item["link"])
+                    if full_content:
+                        item["full_content"] = full_content
+                quality_items.append(item)
+            else:
+                log.info(
+                    f"Discarding item {item['title']} with ranking {item['ranking']}"
+                )
+
         # Filter out already stored items
         new_items = self.item_storage.filter_new_items(
-            content_result["url"], parsed_items
+            content_result["url"], quality_items
         )
 
         if new_items:

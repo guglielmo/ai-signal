@@ -394,3 +394,23 @@ class ParsedItemStorage:
                 items.append(item)
 
             return items
+
+    def mark_as_removed(self, item_id: str) -> None:
+        """Mark an item as removed."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE items SET removed = 1 WHERE id = ?", (item_id,))
+
+    def update_note(self, item_id: str, note: str) -> None:
+        """Update the note for an item."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE items SET notes = ? WHERE id = ?", (note, item_id))
+
+    def update_full_content(self, item_id: str, content: str) -> None:
+        """Update the full content of an item."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE items SET full_content = ? WHERE id = ?", (content, item_id)
+            )

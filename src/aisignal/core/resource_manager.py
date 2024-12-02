@@ -99,9 +99,8 @@ class ResourceManager:
         if sources:
             filtered = [r for r in filtered if r.source in sources]
 
-        # Sort results
+        # Sort results based on toggle
         if sort_by_datetime:
-            return sorted(filtered, key=lambda r: r.datetime, reverse=True)
-        return sorted(
-            filtered, key=lambda r: (r.datetime.date(), r.ranking), reverse=True
-        )
+            return sorted(filtered, key=lambda r: (r.datetime, r.ranking), reverse=True)
+        else:
+            return sorted(filtered, key=lambda r: (r.ranking, r.datetime), reverse=True)

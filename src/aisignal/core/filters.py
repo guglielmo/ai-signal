@@ -55,11 +55,10 @@ class ResourceFilterState:
 
     def toggle_sort(self) -> None:
         """
-        Toggles the sorting order between date-time and other criteria.
-
-        This method switches the current sorting preference to its opposite state
-        and triggers an update in the filter settings to reflect the new sorting
-        order.
+        Toggles between ranking-first and datetime-first sorting modes.
+        When sort_by_datetime is True,
+        resources are sorted by datetime first, then ranking.
+        When False (default), resources are sorted by ranking first, then datetime.
         """
         self.sort_by_datetime = not self.sort_by_datetime
         self.on_filter_change()

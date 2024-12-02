@@ -205,6 +205,9 @@ class AppConfiguration:
     api_keys: APIKeys
     prompts: Prompts
     obsidian: ObsidianConfig
+    sync_interval: int = 24
+    min_threshold: float = 50.0  # Default value
+    max_threshold: float = 80.0  # Default value
 
     @classmethod
     def from_dict(cls, data: Dict) -> "AppConfiguration":
@@ -230,6 +233,9 @@ class AppConfiguration:
                 api_keys=APIKeys.from_dict(data["api_keys"]),
                 prompts=Prompts.from_dict(data["prompts"]),
                 obsidian=ObsidianConfig.from_dict(data["obsidian"]),
+                sync_interval=int(data.get("sync_interval", 24)),
+                min_threshold=float(data.get("min_threshold", 50.0)),
+                max_threshold=float(data.get("max_threshold", 80.0)),
             )
         except KeyError as e:
             raise ConfigValidationError(f"Missing required configuration key: {e}")
@@ -292,4 +298,7 @@ class AppConfiguration:
                 "vault_path": "/path/to/your/vault",
                 "template_path": "/path/to/template.md",
             },
+            "sync_interval": 24,
+            "min_threshold": 50.0,
+            "max_threshold": 80.0,
         }
