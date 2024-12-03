@@ -120,3 +120,20 @@ ListView > ListItem.-selected {
     dock: bottom;
     margin-top: 1;
 }
+
+MarkdownViewer MarkdownTableOfContents {
+    width: 30%;
+    border-right: solid $primary;
+    overflow: auto;
+
+}
+
+/* Ensure the main markdown content takes the remaining space */
+MarkdownViewer Markdown {
+    width: 70%;
+}
+
+/* Make the MarkdownViewer arrange its children horizontally */
+MarkdownViewer {
+    layout: horizontal;
+}

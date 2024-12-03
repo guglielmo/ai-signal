@@ -65,7 +65,7 @@ class ResourceDetailScreen(BaseScreen):
 
         # Always present bindings
         new_bindings.bind("escape", "app.pop_screen", "Back")
-        new_bindings.bind("r", "remove", "Remove")
+        new_bindings.bind("d", "delete", "Delete")
         new_bindings.bind("o", "open_browser", "Open in Browser")
         new_bindings.bind("s", "share", "Share")
         new_bindings.bind("e", "export", "Export to Obsidian")
@@ -76,6 +76,15 @@ class ResourceDetailScreen(BaseScreen):
             new_bindings.bind("f", "fetch_full", "Re-fetch Full Content")
 
         self._bindings = new_bindings
+
+    def on_mount(self) -> None:
+        """Called when the view is mounted."""
+        viewer = self.query_one(MarkdownViewer)
+        self.log(f"Viewer class: {viewer.__class__.__name__}")
+        self.log(f"Viewer DOM classes: {viewer.classes}")
+        self.log("Children:")
+        for child in viewer.children:
+            self.log(f"- {child.__class__.__name__}: {child.classes}")
 
     def compose_content(self) -> ComposeResult:
         """
@@ -188,7 +197,7 @@ class ResourceDetailScreen(BaseScreen):
         else:
             self.app.notify("Failed to fetch full content")
 
-    def action_remove(self) -> None:
+    def action_delete(self) -> None:
         """Mark resource as removed."""
         self.app.item_storage.mark_as_removed(self.resource.id)
         self.app.resource_manager.remove_resource(self.resource.id)
