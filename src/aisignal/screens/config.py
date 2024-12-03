@@ -19,8 +19,9 @@ class ConfigScreen(BaseScreen):
     """
 
     BINDINGS = [
-        Binding("escape", "app.pop_screen", "Back", show=True),
         Binding("s", "save", "Save Config"),
+        Binding("q", "app.pop_screen", "Close screen", show=True),
+        Binding("escape", "app.pop_screen", "Close screen", show=True),
     ]
 
     def compose_content(self) -> ComposeResult:

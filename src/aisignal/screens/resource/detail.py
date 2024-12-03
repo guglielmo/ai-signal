@@ -64,27 +64,19 @@ class ResourceDetailScreen(BaseScreen):
         new_bindings = BindingsMap()
 
         # Always present bindings
-        new_bindings.bind("escape", "app.pop_screen", "Back")
         new_bindings.bind("d", "delete", "Delete")
-        new_bindings.bind("o", "open_browser", "Open in Browser")
-        new_bindings.bind("s", "share", "Share")
-        new_bindings.bind("e", "export", "Export to Obsidian")
+        new_bindings.bind("o", "export", "-> Obsidian")
+        # new_bindings.bind("s", "share", "Share")
 
         if not self.resource.full_content:
             new_bindings.bind("f", "fetch_full", "Fetch Full Content")
         else:
             new_bindings.bind("f", "fetch_full", "Re-fetch Full Content")
 
-        self._bindings = new_bindings
+        new_bindings.bind("q", "app.pop_screen", "Close screen")
+        new_bindings.bind("escape", "app.pop_screen", "Close screen")
 
-    def on_mount(self) -> None:
-        """Called when the view is mounted."""
-        viewer = self.query_one(MarkdownViewer)
-        self.log(f"Viewer class: {viewer.__class__.__name__}")
-        self.log(f"Viewer DOM classes: {viewer.classes}")
-        self.log("Children:")
-        for child in viewer.children:
-            self.log(f"- {child.__class__.__name__}: {child.classes}")
+        self._bindings = new_bindings
 
     def compose_content(self) -> ComposeResult:
         """

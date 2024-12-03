@@ -25,17 +25,20 @@ class MainScreen(BaseScreen):
     """
 
     BINDINGS = [
-        Binding("f", "toggle_filters", "Filters"),
+        Binding("d", "delete", "Delete Resource"),
+        Binding("s", "toggle_sort", "Toggle sort"),
+        Binding("f", "sync", "Fetch content"),
+        Binding("b", "toggle_filters", "Toggle sidebar"),
         Binding("c", "toggle_config", "Config"),
-        Binding("d", "toggle_sort", "Toggle sort"),
-        Binding("s", "sync", "Sync"),
         Binding("r", "reset_filters", "Reset Filters"),
+        Binding("q", "quit", "Quit application"),
     ]
 
     def __init__(self):
         super().__init__()
         self.is_syncing = False
         self._filters_active = False
+        self._last_selected_row = None
 
     def compose_content(self) -> ComposeResult:
         """
@@ -98,7 +101,10 @@ class MainScreen(BaseScreen):
     def _on_screen_resume(self) -> None:
         """Called when main screen becomes active again after being suspended"""
         super()._on_screen_resume()
-        self.update_resource_list()
+        if self._last_selected_row:
+            table = self.query_one("#resource_list", DataTable)
+            latest_position = table.get_row_index(self._last_selected_row)
+            self.update_resource_list(cursor_position=latest_position)
 
     def _load_stored_items(self) -> None:
         """
@@ -245,6 +251,22 @@ class MainScreen(BaseScreen):
         sort_mode = "datetime" if self.app.filter_state.sort_by_datetime else "ranking"
         self.app.notify(f"Sorting by {sort_mode} first")
 
+    def action_delete(self) -> None:
+        """Delete the currently highlighted resource."""
+        table = self.query_one("#resource_list", DataTable)
+        # Check if we have a highlighted row
+        if table.cursor_row is not None:
+            row_key = str(table.cursor_row)  # Get the key of highlighted row
+            current_position = table.get_row_index(row_key)
+            resource = self.app.resource_manager[row_key]
+            # Mark as removed in storage and manager
+            self.app.item_storage.mark_as_removed(resource.id)
+            self.app.resource_manager.remove_resource(resource.id)
+
+            # Update the UI
+            self.app.notify(f"Removed resource: {resource.title}")
+            self.update_resource_list(cursor_position=current_position)
+
     def action_sync(self) -> None:
         """
         Initiates the synchronization process if it is not already in progress.
@@ -256,6 +278,14 @@ class MainScreen(BaseScreen):
         """
         if not self.is_syncing:
             asyncio.create_task(self._sync_content())
+
+    def action_quit(self) -> None:
+        """
+        Exits the application by calling the exit method on the app instance.
+
+        :return: None
+        """
+        self.app.exit()
 
     async def _sync_content(self) -> None:
         """
@@ -330,7 +360,7 @@ class MainScreen(BaseScreen):
             progress.styles.visibility = "hidden"
             progress.update(progress=0)
 
-    def update_resource_list(self) -> None:
+    def update_resource_list(self, cursor_position: int | None = None) -> None:
         """
         Updates the resource list displayed in the application by clearing the current
         data and repopulating it from the filtered resources. The function retrieves
@@ -396,8 +426,17 @@ class MainScreen(BaseScreen):
             )
             self.app.resource_manager.add_row_key(row_key, i)
 
+        # At the end, after all rows have been added:
+        if cursor_position is not None:
+            # Ensure cursor_position is within bounds
+            max_position = len(filtered_resources) - 1
+            if max_position >= 0:
+                cursor_position = min(cursor_position, max_position)
+                table.move_cursor(row=cursor_position)
+
         # Log filter status
-        self.log(f"Showing {len(filtered_resources)} resources after filtering")
+        self.log.debug(f"Showing {len(filtered_resources)} resources after filtering")
+        self.log.debug(f"Moving the cursor at {cursor_position}")
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """
@@ -435,7 +474,7 @@ class MainScreen(BaseScreen):
          of the selected row.
         :return: None
         """
-
+        self._last_selected_row = event.row_key
         self.app.log.info(event.row_key)
         resource = self.app.resource_manager[event.row_key]
         self.app.push_screen(ResourceDetailScreen(resource))

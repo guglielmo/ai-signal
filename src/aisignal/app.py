@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
-from textual.app import App
-from textual.binding import Binding
+from textual.app import App, SystemCommand
+from textual.screen import Screen
 
 from aisignal.core.filters import ResourceFilterState
 from aisignal.core.token_tracker import TokenTracker
+from aisignal.screens import TokenUsageModal
 from aisignal.screens.main import MainScreen
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
@@ -33,9 +34,7 @@ class ContentCuratorApp(App):
     """
 
     CSS_PATH = "styles/app.tcss"
-    BINDINGS = [
-        Binding("q", "quit", "Quit", priority=True),
-    ]
+    COMMAND_PALETTE_BINDING = "slash"
 
     def __init__(self, config_path: Optional[Path] = None):
         """
@@ -81,6 +80,22 @@ class ContentCuratorApp(App):
         :return: None
         """
         self.push_screen(MainScreen())
+
+    def get_system_commands(self, screen: Screen) -> Iterable[SystemCommand]:
+        """Add custom system commands to the command palette."""
+        # Get the default system commands first
+        yield from super().get_system_commands(screen)
+
+        # Add token usage command
+        yield SystemCommand(
+            "Show Token Usage",
+            "Display token usage statistics and costs",
+            self.show_token_usage,
+        )
+
+    def show_token_usage(self) -> None:
+        """Show the token usage modal when 't' is pressed"""
+        self.app.push_screen(TokenUsageModal())
 
     def update_main_screen(self) -> None:
         """Find main screen in stack and update its resource list"""

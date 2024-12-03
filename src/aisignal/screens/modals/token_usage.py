@@ -16,7 +16,10 @@ class TokenUsageModal(ModalScreen[None]):
     Shows both current session and total historical usage for both Jina AI and OpenAI.
     """
 
-    BINDINGS = [Binding("escape", "app.pop_screen", "Close")]
+    BINDINGS = [
+        Binding("q", "app.pop_screen", "Close"),
+        Binding("escape", "app.pop_screen", "Close"),
+    ]
 
     def compose(self) -> ComposeResult:
         with Vertical():

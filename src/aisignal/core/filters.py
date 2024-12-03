@@ -18,7 +18,7 @@ class ResourceFilterState:
     def __init__(self, on_filter_change: Callable[[], None]):
         self.selected_categories = set()
         self.selected_sources = set()
-        self.sort_by_datetime = False
+        self.sort_by_datetime = True
         self.on_filter_change = on_filter_change
 
     def toggle_category(self, category: str) -> None:

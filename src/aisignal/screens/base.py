@@ -1,15 +1,12 @@
 from typing import TYPE_CHECKING
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Footer, Header
 
 if TYPE_CHECKING:
     from aisignal.app import ContentCuratorApp
-
-from aisignal.screens.modals.token_usage import TokenUsageModal
 
 
 class BaseScreen(Screen):
@@ -18,10 +15,6 @@ class BaseScreen(Screen):
     header and footer, while requiring subclasses to define the main content
     area.
     """
-
-    BINDINGS = [
-        Binding("u", "show_token_usage", "Token Usage", priority=True),
-    ]
 
     def compose(self) -> ComposeResult:
         """
@@ -63,7 +56,3 @@ class BaseScreen(Screen):
         :return: The ContentCuratorApp instance for the current object.
         """
         return super().app  # type: ignore
-
-    def action_show_token_usage(self) -> None:
-        """Show the token usage modal when 't' is pressed"""
-        self.app.push_screen(TokenUsageModal())
