@@ -299,7 +299,7 @@ class MainScreen(BaseScreen):
 
         :return: None
         """
-        self.log.info("Starting content synchronization")
+        self.app.notify_user("Starting content synchronization")
         self.is_syncing = True
         progress = self.query_one("#sync_progress", ProgressBar)
         progress.styles.visibility = "visible"
@@ -311,20 +311,22 @@ class MainScreen(BaseScreen):
             new_resources = []
 
             for i, url in enumerate(self.app.config_manager.sources):
-                self.app.notify_user(f"Processing URL: {url}")
+                self.log.info(f"Processing source: {url}")
                 progress.advance((i + 1) / total_urls * 100)
 
+                self.log.info(" - Fetching markdown with Jina AI")
                 content_result = await self.app.content_service.fetch_content(url)
                 if not content_result:
                     self.app.handle_error(f"Failed to fetch content from {url}")
                     continue
 
                 try:
+                    self.log.info("Analyzing content with LLM")
                     items = await self.app.content_service.analyze_content(
                         content_result,
+                        url,
                         self.app.config_manager.content_extraction_prompt,
                     )
-
                     for item in items:
                         try:
                             resource = Resource(

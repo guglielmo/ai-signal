@@ -31,12 +31,20 @@ class ResourceManager:
 
     def add_resources(self, resources: List[Resource]) -> None:
         """
-        Adds a list of resources to the current object and clears the row keys.
+        Adds new resources to the existing collection, preserving current resources.
+        Clears row keys to ensure proper re-mapping.
 
         :param resources: List of Resource objects to be added.
         :return: None. The method updates the state of the object.
         """
-        self.resources = resources
+        # Add only resources that aren't already present (based on id)
+        existing_urls = {r.url for r in self.resources}
+        filtered_resources = [r for r in resources if r.url not in existing_urls]
+
+        # Extend the existing resources list
+        self.resources.extend(filtered_resources)
+
+        # Clear row keys for remapping
         self.clear_row_keys()
 
     def clear_row_keys(self) -> None:

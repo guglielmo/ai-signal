@@ -206,18 +206,23 @@ class ContentService:
             return None
 
     async def analyze_content(
-        self, content_result: Dict, prompt_template: str
+        self, content_result: Dict, url: str, prompt_template: str
     ) -> List[Dict]:
         """
-        Analyze content changes using OpenAI.
+        Analyzes the content obtained from a specific URL using a given prompt template.
+        The method checks for changes in the content, analyzes added blocks if present,
+        and utilizes an AI model to classify content into categories. The resulting
+        items are filtered based on quality, logged for token usage, and stored if
+        they are new and meet a minimum ranking threshold.
 
-        :param content_result: Dictionary from fetch_content containing content and diff
-        :param prompt_template: The template of the prompt to be used for
-          generating the analysis.
-        :return: A list of dictionaries containing the parsed analysis results
-          from the response.
+        :param content_result: A dictionary containing the content's URL, its content,
+            and any changes detected since the last analysis.
+        :param url: The source URL associated with the content to be analyzed.
+        :param prompt_template: A string template for generating prompts to send to
+            the AI model.
+        :return: A list of dictionary items representing analyzed content, filtered and
+            stored based on quality and novelty.
         """
-        log.info(f"Analyzing {content_result['url']}")
 
         if not content_result["diff"].has_changes:
             log.info(
@@ -229,6 +234,7 @@ class ContentService:
         if content_result["diff"].added_blocks:
             content_to_analyze = "\n\n".join(content_result["diff"].added_blocks)
             log.info(f"Analyzing {len(content_result['diff'].added_blocks)} new blocks")
+            log.debug(f"{content_result['diff'].added_blocks}")
         else:
             content_to_analyze = content_result["content"]
             log.info("No specific blocks identified, analyzing full content")
@@ -236,9 +242,12 @@ class ContentService:
         categories_list = "\n".join(f"  - {cat}" for cat in self.categories)
         full_prompt = (
             f"{prompt_template}\n\n"
-            f"Available categories:\n{categories_list}\n\n"
-            f"Content to analyze:\n{content_to_analyze}"
+            f"Categories\n==========\n{categories_list}\n\n"
+            f"Content\n=======\n{content_to_analyze}\n\n"
+            f"Source\n======\n{url}\n\n"
         )
+
+        log.debug(f"PROMPT\n\n{full_prompt}\n")
 
         response = await self.openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -265,8 +274,9 @@ class ContentService:
         self.token_tracker.add_openai_usage(
             response.usage.prompt_tokens, response.usage.completion_tokens
         )
-
-        parsed_items = self._parse_markdown_items(response.choices[0].message.content)
+        returned_content = response.choices[0].message.content
+        log(f"content returned from AI: {returned_content}")
+        parsed_items = self._parse_markdown_items(returned_content)
 
         # Filter by minimum threshold and fetch full content for high-quality items
         quality_items = []
