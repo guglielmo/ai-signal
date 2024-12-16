@@ -289,7 +289,7 @@ class MainScreen(BaseScreen):
 
     async def _sync_content(self) -> None:
         """
-        Synchronizes content from various sources, analyzes it,
+        Synchronizes content from configured sources, analyzes it,
         and updates the resource list in the application.
 
         Sets syncing status, updates progress, and processes content
@@ -308,59 +308,83 @@ class MainScreen(BaseScreen):
             total_urls = len(self.app.config_manager.sources)
             progress.update(total=100)
 
-            new_resources = []
-
+            # Step 1: Fetch content from all sources
+            content_results = []
             for i, url in enumerate(self.app.config_manager.sources):
                 self.log.info(f"Processing source: {url}")
-                progress.advance((i + 1) / total_urls * 100)
 
                 self.log.info(" - Fetching markdown with Jina AI")
                 content_result = await self.app.content_service.fetch_content(url)
+
+                progress.advance((i + 1) / total_urls * 50)  # First 50% for fetching
+
                 if not content_result:
                     self.app.handle_error(f"Failed to fetch content from {url}")
                     continue
 
-                try:
-                    self.log.info("Analyzing content with LLM")
-                    items = await self.app.content_service.analyze_content(
-                        content_result,
-                        url,
-                        self.app.config_manager.content_extraction_prompt,
-                    )
-                    for item in items:
-                        try:
-                            resource = Resource(
-                                id=str(len(new_resources)),
-                                title=item["title"],
-                                url=item["link"],
-                                categories=item["categories"],
-                                ranking=item["ranking"],
-                                summary=item["summary"],
-                                full_content="",
-                                datetime=datetime.strptime(
-                                    item["first_seen"], "%Y-%m-%dT%H:%M:%S.%f"
-                                ),
-                                source=item["source_url"],
-                            )
-                            if (
-                                resource.ranking
-                                >= self.app.content_service.min_threshold
-                            ):
-                                new_resources.append(resource)
-                        except Exception as e:
-                            self.app.log.error(f"Error: {item} {e}")
-                            continue
-                except Exception as e:
-                    self.app.handle_error(f"Error processing content from {url}", e)
-                    continue
+                content_results.append(content_result)
 
-            self.app.resource_manager.add_resources(new_resources)
-            self.update_resource_list()
+            # Step 2: Batch analyze all content
+            if content_results:
+                self.log.info("Analyzing content with LLM")
+                try:
+                    config_manager = self.app.config_manager
+                    analyzed_results = await self.app.content_service.analyze_content(
+                        content_results,
+                        prompt_template=config_manager.content_extraction_prompt,
+                        # batch_size=config_manager.content_extraction_batch_size,
+                        batch_size=3500,
+                    )
+
+                    # Step 3: Process analyzed results
+                    min_threshold = self.app.content_service.min_threshold
+                    new_resources = []
+                    for url, items in analyzed_results.items():
+                        # Last 50% for processing
+                        if items == 0:
+                            continue
+
+                        progress.advance((len(new_resources) / len(items)) * 50 + 50)
+
+                        for item in items:
+                            try:
+                                resource = Resource(
+                                    id=str(len(new_resources)),
+                                    title=item["title"],
+                                    url=item["link"],
+                                    categories=item["categories"],
+                                    ranking=item["ranking"],
+                                    summary=item["summary"],
+                                    full_content=item.get("full_content", ""),
+                                    datetime=datetime.fromisoformat(item["first_seen"]),
+                                    source=item["source_url"],
+                                )
+                                if resource.ranking >= min_threshold:
+                                    new_resources.append(resource)
+                            except Exception as e:
+                                self.app.log.error(
+                                    f"Error creating resource: {item} {e}"
+                                )
+                                continue
+
+                    if new_resources:
+                        self.app.resource_manager.add_resources(new_resources)
+                        self.update_resource_list()
+                        self.app.notify_user(
+                            f"Added {len(new_resources)} new resources"
+                        )
+                    else:
+                        self.app.notify_user("No new resources found")
+
+                except Exception as e:
+                    self.app.handle_error("Error processing content", e)
 
         finally:
             self.is_syncing = False
             progress.styles.visibility = "hidden"
             progress.update(progress=0)
+            self.update_resource_list()
+            self.app.notify_user("Sync complete")
 
     def update_resource_list(self, cursor_position: int | None = None) -> None:
         """

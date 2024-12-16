@@ -3,7 +3,7 @@ import asyncio
 from textual.app import ComposeResult
 from textual.binding import BindingsMap
 from textual.containers import Container, Vertical
-from textual.widgets import Label, MarkdownViewer
+from textual.widgets import Label, LoadingIndicator, MarkdownViewer
 
 from aisignal.core.models import Resource
 from aisignal.screens import BaseScreen
@@ -165,29 +165,74 @@ class ResourceDetailScreen(BaseScreen):
 
     async def _fetch_full_content(self) -> None:
         """Fetch full content and update view."""
-        content = await self.app.content_service._fetch_full_content(self.resource.url)
-        if content:
-            self.resource.full_content = content
-            # Update in database
-            self.app.item_storage.update_full_content(self.resource.id, content)
 
-            # Remove content container if it exists
-            if self.query("#content_container"):
-                await self.query_one("#content_container").remove()
+        # Show loading indicator
+        loading = LoadingIndicator()
+        await self.mount(loading)
 
-            # Add new content container with markdown viewer
-            container = Container(id="content_container")
-            await self.mount(container)
-            await container.mount(
-                MarkdownViewer(
-                    content, show_table_of_contents=True, id="markdown_content"
-                )
+        try:
+            content = await self.app.content_service.fetch_full_content(
+                self.resource.url
             )
+            if content:
+                self.resource.full_content = content
+                # Update in database
+                self.app.item_storage.update_full_content(self.resource.id, content)
 
-            # Update bindings since content is now available
-            self.update_bindings_for_content()
-        else:
-            self.app.notify("Failed to fetch full content")
+                # Remove all existing widgets
+                await loading.remove()
+                await self.query("*").remove()
+
+                # Manually rebuild the screen structure
+                vertical = Vertical()
+                await self.mount(vertical)
+
+                # Header info
+                header_info = Container(id="header_info")
+                await vertical.mount(header_info)
+                await header_info.mount(Label(f"Title: {self.resource.title}"))
+                await header_info.mount(Label(f"Source: {self.resource.source}"))
+                await header_info.mount(Label(f"Link: {self.resource.url}"))
+                await header_info.mount(
+                    Label(f"Categories: {', '.join(self.resource.categories)}")
+                )
+                await header_info.mount(Label(f"Ranking: {self.resource.ranking:.2f}"))
+                await header_info.mount(
+                    Label(f"Date: {self.resource.datetime.strftime('%Y-%m-%d %H:%M')}")
+                )
+
+                # Content container
+                content_container = Container(id="content_container")
+                await vertical.mount(content_container)
+                markdown_viewer = MarkdownViewer(
+                    self.resource.full_content,
+                    show_table_of_contents=True,
+                    id="markdown_content",
+                )
+                await content_container.mount(markdown_viewer)
+
+                # Focus handling
+                async def ensure_markdown_focus():
+                    # Give the UI a moment to stabilize
+                    await asyncio.sleep(0.1)
+                    if markdown_viewer := self.query_one(
+                        "#markdown_content", MarkdownViewer
+                    ):
+                        self.set_focus(None)  # Clear any existing focus
+                        markdown_viewer.can_focus = True
+                        markdown_viewer.scroll_home()  # Ensure we're at the top
+                        markdown_viewer.focus()
+                        self.app.notify("Markdown viewer focused")  # Debug notification
+
+                # Schedule the focus handling
+                asyncio.create_task(ensure_markdown_focus())
+
+                # Update bindings since content is now available
+                self.update_bindings_for_content()
+            else:
+                self.app.notify("Failed to fetch full content")
+        finally:
+            await loading.remove()
 
     def action_delete(self) -> None:
         """Mark resource as removed."""

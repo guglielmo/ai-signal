@@ -1,6 +1,6 @@
 import ast
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import aiohttp
 import openai
@@ -161,7 +161,7 @@ class ContentService:
 
     # In content.py, add to ContentService class
 
-    async def _fetch_full_content(self, url: str) -> Optional[str]:
+    async def fetch_full_content(self, url: str) -> Optional[str]:
         """
         Fetches the full content of a URL and converts it to markdown using Jina AI.
 
@@ -206,109 +206,195 @@ class ContentService:
             return None
 
     async def analyze_content(
-        self, content_result: Dict, url: str, prompt_template: str
-    ) -> List[Dict]:
+        self,
+        content_results: Union[Dict, List[Dict]],
+        prompt_template: str,
+        batch_size: int = 3500,
+    ) -> Dict[str, List[Dict]]:
         """
-        Analyzes the content obtained from a specific URL using a given prompt template.
-        The method checks for changes in the content, analyzes added blocks if present,
-        and utilizes an AI model to classify content into categories. The resulting
-        items are filtered based on quality, logged for token usage, and stored if
-        they are new and meet a minimum ranking threshold.
+        Analyzes content from one or multiple URLs,
+        optimizing API calls through batching.
 
-        :param content_result: A dictionary containing the content's URL, its content,
-            and any changes detected since the last analysis.
-        :param url: The source URL associated with the content to be analyzed.
-        :param prompt_template: A string template for generating prompts to send to
-            the AI model.
-        :return: A list of dictionary items representing analyzed content, filtered and
-            stored based on quality and novelty.
+        Args:
+            content_results: Single content result or
+                list of content results from fetch_content
+            prompt_template: Template for the analysis prompt
+            batch_size: Maximum size of each batch in tokens (default: 3500)
+
+        Returns:
+            Dictionary mapping URLs to their analyzed items
         """
+        # Handle single content result
+        if isinstance(content_results, dict):
+            content_results = [content_results]
 
-        if not content_result["diff"].has_changes:
-            log.info(
-                f"No changes detected for {content_result['url']}, using stored items"
-            )
-            return self.item_storage.get_stored_items(content_result["url"])
+        # Step 1: Initialize results and group contents needing analysis
+        results = {}
+        contents_to_analyze = {}
 
-        # If there are new blocks, analyze only those
-        if content_result["diff"].added_blocks:
+        for content_result in content_results:
+            url = content_result["url"]
+
+            # Step 1a: Skip unchanged content
+            if not content_result["diff"].has_changes:
+                log.info(f"No changes detected for {url}")
+                continue
+
+            # Step 1b: Get content blocks to analyze
+            if not content_result["diff"].added_blocks:
+                log.warning(f"Diff indicates changes but no added blocks for {url}")
+                continue
             content_to_analyze = "\n\n".join(content_result["diff"].added_blocks)
-            log.info(f"Analyzing {len(content_result['diff'].added_blocks)} new blocks")
-            log.debug(f"{content_result['diff'].added_blocks}")
-        else:
-            content_to_analyze = content_result["content"]
-            log.info("No specific blocks identified, analyzing full content")
+            log.info(
+                f"Analyzing {len(content_result['diff'].added_blocks)} "
+                f"new blocks for {url}"
+            )
+            log.debug(f"New blocks: {content_result['diff'].added_blocks}")
 
+            contents_to_analyze[url] = content_to_analyze
+
+        # Step 2: Prepare batches for analysis
+        batches = []
+        current_batch = []
+        current_batch_size = 0
+
+        for url, content in contents_to_analyze.items():
+            content_section = f"## {url}\n\n{content}\n\n"
+            estimated_tokens = len(content_section) // 4  # rough estimation
+
+            if current_batch_size + estimated_tokens > batch_size and current_batch:
+                batches.append("\n".join(current_batch))
+                current_batch = [content_section]
+                current_batch_size = estimated_tokens
+            else:
+                current_batch.append(content_section)
+                current_batch_size += estimated_tokens
+
+        if current_batch:
+            batches.append("\n".join(current_batch))
+
+        # Step 3: Process each batch
         categories_list = "\n".join(f"  - {cat}" for cat in self.categories)
+
+        for batch_content in batches:
+            batch_results = await self._process_batch_content(
+                batch_content, prompt_template, categories_list
+            )
+            results.update(batch_results)
+
+        return results
+
+    async def _process_batch_content(
+        self, batch_content: str, prompt_template: str, categories_list: str
+    ) -> Dict[str, List[Dict]]:
+        """
+        Process a single batch of content through the AI and handle the results.
+
+        Args:
+            batch_content: Content from multiple URLs formatted with headers
+            prompt_template: Template for the AI prompt
+            categories_list: Formatted list of available categories
+
+        Returns:
+            Dictionary mapping URLs to their analyzed and processed items
+        """
+        # Step 1: Get AI analysis
+        ai_response = await self._get_ai_analysis(
+            batch_content, prompt_template, categories_list
+        )
+
+        # Step 2: Process AI response for each URL
+        return await self._process_urls_items(ai_response)
+
+    async def _get_ai_analysis(
+        self, content: str, prompt_template: str, categories_list: str
+    ) -> str:
+        """
+        Send content to AI for analysis and handle token tracking.
+        """
+        # Prepare prompt
         full_prompt = (
             f"{prompt_template}\n\n"
             f"Categories\n==========\n{categories_list}\n\n"
-            f"Content\n=======\n{content_to_analyze}\n\n"
-            f"Source\n======\n{url}\n\n"
+            f"Content\n=======\n{content}\n"
         )
-
         log.debug(f"PROMPT\n\n{full_prompt}\n")
 
+        # Get AI response
         response = await self.openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": full_prompt}],
             temperature=0.7,
         )
 
-        # Track and log token usage with costs
-        prompt_tokens = response.usage.prompt_tokens
-        completion_tokens = response.usage.completion_tokens
-        total_tokens = response.usage.total_tokens
+        # Track token usage
+        self._track_token_usage(response.usage)
+
+        returned_content = response.choices[0].message.content
+        log.debug(f"Content returned from AI: {returned_content}")
+        return returned_content
+
+    def _track_token_usage(self, usage):
+        """Track and log token usage and costs."""
+        prompt_tokens = usage.prompt_tokens
+        completion_tokens = usage.completion_tokens
+        total_tokens = usage.total_tokens
 
         prompt_cost = prompt_tokens * 0.15 / 1_000_000
         completion_cost = completion_tokens * 0.60 / 1_000_000
         total_cost = prompt_cost + completion_cost
 
         log.info(
-            f"OpenAI tokens for {content_result['url']}:\n"
+            f"OpenAI tokens for batch:\n"
             f"  Input:  {prompt_tokens:,} tokens (${prompt_cost:.6f})\n"
             f"  Output: {completion_tokens:,} tokens (${completion_cost:.6f})\n"
             f"  Total:  {total_tokens:,} tokens (${total_cost:.6f})"
         )
 
-        self.token_tracker.add_openai_usage(
-            response.usage.prompt_tokens, response.usage.completion_tokens
-        )
-        returned_content = response.choices[0].message.content
-        log(f"content returned from AI: {returned_content}")
-        parsed_items = self._parse_markdown_items(returned_content)
+        self.token_tracker.add_openai_usage(prompt_tokens, completion_tokens)
 
-        # Filter by minimum threshold and fetch full content for high-quality items
-        quality_items = []
+    async def _process_urls_items(self, content: str) -> Dict[str, List[Dict]]:
+        """
+        Process and store items for many URLs
+        """
+        # Parse items from content
+        parsed_items = self._parse_markdown_items(content)
 
+        # Group items by source URL
+        items_by_url = {}
         for item in parsed_items:
+            source_url = item["source"]
+            if source_url not in items_by_url:
+                items_by_url[source_url] = []
+
+            # Filter and enhance quality items
             if item["ranking"] >= self.min_threshold:
                 if item["ranking"] >= self.max_threshold:
-                    # Fetch full content for high-quality items
-                    full_content = await self._fetch_full_content(item["link"])
+                    full_content = await self.fetch_full_content(item["link"])
                     if full_content:
                         item["full_content"] = full_content
-                quality_items.append(item)
+                items_by_url[source_url].append(item)
             else:
                 log.info(
-                    f"Discarding item {item['title']} with ranking {item['ranking']}"
+                    f"Discarding item {item['title']} "
+                    f"with ranking {item['ranking']}"
                 )
 
-        # Filter out already stored items
-        new_items = self.item_storage.filter_new_items(
-            content_result["url"], quality_items
-        )
+        # Process each URL's items
+        results = {}
+        for source_url, items in items_by_url.items():
+            # Handle new items
+            new_items = self.item_storage.filter_new_items(source_url, items)
 
-        if new_items:
-            # Store new items
-            self.item_storage.store_items(content_result["url"], new_items)
-            log.info(f"Stored {len(new_items)} new items")
+            if new_items:
+                self.item_storage.store_items(source_url, new_items)
+                log.info(f"Stored {len(new_items)} new items for {source_url}")
+                results[source_url] = self.item_storage.get_stored_items(source_url)
+            else:
+                log.info(f"No new items to store for {source_url}")
+                results[source_url] = []
 
-            # Return all items for this source
-            return self.item_storage.get_stored_items(content_result["url"])
-        else:
-            log.info("No new items to store")
-            return []
+        return results
 
     @staticmethod
     def _extract_title(markdown: str) -> str:

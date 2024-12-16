@@ -5,7 +5,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from textual import log
 
@@ -89,45 +89,46 @@ class MarkdownSourceStorage:
           and a boolean indicating whether there are changes.
         :rtype: ContentDiff
         """
+        # Retrieve stored content
+        stored_content = self.get_stored_content(url)
+
+        # Split both contents into blocks
+        old_blocks = self._split_into_blocks(stored_content)
+        new_blocks = self._split_into_blocks(new_content)
+
+        # Use difflib for intelligent difference detection
+        differ = difflib.Differ()
+        diff = list(differ.compare(old_blocks, new_blocks))
+
+        added = []
+        removed = []
+
+        for line in diff:
+            if line.startswith("+ "):
+                added.append(line[2:])
+            elif line.startswith("- "):
+                removed.append(line[2:])
+
+        return ContentDiff(
+            added_blocks=added,
+            removed_blocks=removed,
+            has_changes=bool(added or removed),
+        )
+
+    def get_stored_content(self, url: str) -> str:
+        """
+        Retrieves the stored content for a given URL from the database.
+
+        :param url: The URL of the source whose content needs to be retrieved.
+        :type url: str
+        :return: The markdown content stored for the given URL, or None if not found.
+        :rtype: str or None
+        """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-
-            # Get stored content
             cursor.execute("SELECT markdown_content FROM sources WHERE url = ?", (url,))
             result = cursor.fetchone()
-
-            if not result:
-                # First time seeing this source
-                return ContentDiff(
-                    added_blocks=self._split_into_blocks(new_content),
-                    removed_blocks=[],
-                    has_changes=True,
-                )
-
-            stored_content = result[0]
-
-            # Split both contents into blocks
-            old_blocks = self._split_into_blocks(stored_content)
-            new_blocks = self._split_into_blocks(new_content)
-
-            # Use difflib for intelligent difference detection
-            differ = difflib.Differ()
-            diff = list(differ.compare(old_blocks, new_blocks))
-
-            added = []
-            removed = []
-
-            for line in diff:
-                if line.startswith("+ "):
-                    added.append(line[2:])
-                elif line.startswith("- "):
-                    removed.append(line[2:])
-
-            return ContentDiff(
-                added_blocks=added,
-                removed_blocks=removed,
-                has_changes=bool(added or removed),
-            )
+            return result[0] if result else None
 
     def store_content(self, url: str, content: str):
         """
@@ -151,7 +152,8 @@ class MarkdownSourceStorage:
                 (url, content, content_hash, datetime.now().isoformat()),
             )
 
-    def _split_into_blocks(self, content: str) -> List[str]:
+    @staticmethod
+    def _split_into_blocks(content: Union[str | None]) -> List[str]:
         """
         Splits the given text content into a list of blocks, where each block is
         delimited by two newline characters. Each block in the resulting list is
@@ -160,6 +162,8 @@ class MarkdownSourceStorage:
         :param content: The text content to be split into blocks.
         :return: A list of blocks with each block being a non-empty, stripped string.
         """
+        if not content:
+            return []
         return [b.strip() for b in content.split("\n\n") if b.strip()]
 
 
