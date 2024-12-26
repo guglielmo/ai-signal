@@ -9,9 +9,11 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import DataTable, Label, ListItem, ListView, ProgressBar
 
 from aisignal.core.models import Resource
+from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
 from aisignal.screens import BaseScreen
 from aisignal.screens.config import ConfigScreen
 from aisignal.screens.resource.detail import ResourceDetailScreen
+from aisignal.screens.widgets.sync_widget import SyncStatusWidget
 
 
 class MainScreen(BaseScreen):
@@ -52,12 +54,15 @@ class MainScreen(BaseScreen):
             with Horizontal():
                 # Left sidebar
                 with Container(id="sidebar"):
-                    yield Label("Categories")
-                    yield ListView(id="category_filter")
-                    yield Label("Sources")
-                    yield ListView(id="source_filter")
-                    with Container(id="sync_status"):
-                        yield ProgressBar(id="sync_progress", show_eta=False)
+                    # Filter section
+                    with Container(id="filters"):
+                        yield Label("Categories")
+                        yield ListView(id="category_filter")
+                        yield Label("Sources")
+                        yield ListView(id="source_filter")
+                    # Sync status section at bottom
+                    with Container(id="sync_container", classes="dock-bottom"):
+                        yield SyncStatusWidget(id="sync_status")
 
                 # Main content
                 with Vertical(id="main_content"):
@@ -299,30 +304,35 @@ class MainScreen(BaseScreen):
 
         :return: None
         """
-        self.app.notify_user("Starting content synchronization")
+        # self.app.notify_user("Starting content synchronization")
         self.is_syncing = True
-        progress = self.query_one("#sync_progress", ProgressBar)
-        progress.styles.visibility = "visible"
+
+        # Get the sync widget and start tracking progress
+        sync_widget = self.query_one(SyncStatusWidget)
 
         try:
-            total_urls = len(self.app.config_manager.sources)
-            progress.update(total=100)
+            # Initialize progress tracking
+            self.app.content_service.sync_progress.start_sync(
+                self.app.config_manager.sources
+            )
+            # Forward the progress object to the widget
+            sync_widget.progress = self.app.content_service.sync_progress
 
             # Step 1: Fetch content from all sources
             content_results = []
-            for i, url in enumerate(self.app.config_manager.sources):
+            for url in self.app.config_manager.sources:
                 self.log.info(f"Processing source: {url}")
-
                 self.log.info(" - Fetching markdown with Jina AI")
-                content_result = await self.app.content_service.fetch_content(url)
+                sync_widget.refresh()
 
-                progress.advance((i + 1) / total_urls * 50)  # First 50% for fetching
-
-                if not content_result:
-                    self.app.handle_error(f"Failed to fetch content from {url}")
+                try:
+                    content_result = await self.app.content_service.fetch_content(url)
+                    if content_result:
+                        content_results.append(content_result)
+                except ContentFetchError as e:
+                    self.app.handle_error(f"Failed to fetch content: {e}")
+                    sync_widget.progress.fail_source(url, str(e))
                     continue
-
-                content_results.append(content_result)
 
             # Step 2: Batch analyze all content
             if content_results:
@@ -336,6 +346,9 @@ class MainScreen(BaseScreen):
                         batch_size=3500,
                     )
 
+                    # Progress is updated by ContentService during analysis
+                    # We just need to handle the results
+
                     # Step 3: Process analyzed results
                     min_threshold = self.app.content_service.min_threshold
                     new_resources = []
@@ -343,8 +356,6 @@ class MainScreen(BaseScreen):
                         # Last 50% for processing
                         if items == 0:
                             continue
-
-                        progress.advance((len(new_resources) / len(items)) * 50 + 50)
 
                         for item in items:
                             try:
@@ -376,15 +387,13 @@ class MainScreen(BaseScreen):
                     else:
                         self.app.notify_user("No new resources found")
 
-                except Exception as e:
-                    self.app.handle_error("Error processing content", e)
+                except ContentAnalysisError as e:
+                    self.app.handle_error("Error analyzing content", e)
 
         finally:
             self.is_syncing = False
-            progress.styles.visibility = "hidden"
-            progress.update(progress=0)
+            sync_widget.progress.complete_sync()
             self.update_resource_list()
-            self.app.notify_user("Sync complete")
 
     def update_resource_list(self, cursor_position: int | None = None) -> None:
         """

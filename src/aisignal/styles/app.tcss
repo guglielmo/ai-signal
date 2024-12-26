@@ -112,15 +112,6 @@ ListView > ListItem.-selected {
 }
 
 
-/* Adjust sync status to accommodate button */
-#sync_status {
-    width: 100%;
-    height: auto;
-    background: $surface;
-    dock: bottom;
-    margin-top: 1;
-}
-
 MarkdownViewer MarkdownTableOfContents {
     width: 30%;
     border-right: solid $primary;
@@ -136,4 +127,34 @@ MarkdownViewer Markdown {
 /* Make the MarkdownViewer arrange its children horizontally */
 MarkdownViewer {
     layout: horizontal;
+}
+
+#sync_container {
+    dock: bottom;
+    height: auto;
+    margin-top: 1;
+}
+
+#sync_status {
+    height: auto;
+    background: $surface;
+}
+
+#sync_status DataTable {
+    height: auto;
+    margin: 1;
+    background: $surface-darken-1;
+}
+
+#sync_status ProgressBar {
+    height: 1;
+    margin: 1;
+}
+
+#sync_status #sync_header {
+    padding: 1;
+    background: $primary;
+    color: $text;
+    text-align: center;
+    text-style: bold;
 }

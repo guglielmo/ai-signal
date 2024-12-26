@@ -6,6 +6,12 @@ import aiohttp
 import openai
 from textual import log
 
+from aisignal.core.sync_exceptions import (
+    APIError,
+    ContentAnalysisError,
+    ContentFetchError,
+)
+from aisignal.core.sync_status import SyncProgress, SyncStatus
 from aisignal.core.token_tracker import COST_PER_MILLION, TokenTracker
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
@@ -72,6 +78,7 @@ class ContentService:
         self.token_tracker = token_tracker
         self.min_threshold = min_threshold
         self.max_threshold = max_threshold
+        self.sync_progress = SyncProgress()
 
     async def _get_jina_wallet_balance(self) -> Optional[float]:
         """
@@ -113,7 +120,7 @@ class ContentService:
             Returns None if fetch fails.
         """
         try:
-
+            self.sync_progress.start_source(url)
             jina_url = f"https://r.jina.ai/{url}"
             headers = {
                 "Authorization": f"Bearer {self.jina_api_key}",
@@ -124,8 +131,7 @@ class ContentService:
             async with aiohttp.ClientSession() as session:
                 async with session.get(jina_url, headers=headers) as response:
                     if response.status != 200:
-                        log.error(f"Jina AI error: {response.status} {response.reason}")
-                        return None
+                        raise APIError("JinaAI", response.status, response.reason)
 
                     new_content = await response.text()
                     estimated_tokens = self.token_tracker.estimate_jina_tokens(
@@ -155,9 +161,10 @@ class ContentService:
                         "content": new_content,
                         "diff": content_diff,
                     }
+        except aiohttp.ClientError as e:
+            raise ContentFetchError(url, str(e))
         except Exception as e:
-            log.error(f"Fetch error: {e}")
-            return None
+            raise ContentFetchError(url, f"Unexpected error: {str(e)}")
 
     # In content.py, add to ContentService class
 
@@ -234,10 +241,14 @@ class ContentService:
 
         for content_result in content_results:
             url = content_result["url"]
+            self.sync_progress.start_source(url)
 
             # Step 1a: Skip unchanged content
             if not content_result["diff"].has_changes:
                 log.info(f"No changes detected for {url}")
+                self.sync_progress.complete_source(
+                    url, 0, 0
+                )  # Mark as complete with no changes
                 continue
 
             # Step 1b: Get content blocks to analyze
@@ -357,44 +368,75 @@ class ContentService:
         """
         Process and store items for many URLs
         """
-        # Parse items from content
-        parsed_items = self._parse_markdown_items(content)
 
         # Group items by source URL
         items_by_url = {}
-        for item in parsed_items:
-            source_url = item["source"]
-            if source_url not in items_by_url:
-                items_by_url[source_url] = []
 
-            # Filter and enhance quality items
-            if item["ranking"] >= self.min_threshold:
-                if item["ranking"] >= self.max_threshold:
-                    full_content = await self.fetch_full_content(item["link"])
-                    if full_content:
-                        item["full_content"] = full_content
-                items_by_url[source_url].append(item)
-            else:
-                log.info(
-                    f"Discarding item {item['title']} "
-                    f"with ranking {item['ranking']}"
-                )
+        try:
+            # Parse items from content
+            parsed_items = self._parse_markdown_items(content)
 
-        # Process each URL's items
-        results = {}
-        for source_url, items in items_by_url.items():
-            # Handle new items
-            new_items = self.item_storage.filter_new_items(source_url, items)
+            for item in parsed_items:
+                source_url = item["source"]
+                if source_url not in items_by_url:
+                    items_by_url[source_url] = []
 
-            if new_items:
-                self.item_storage.store_items(source_url, new_items)
-                log.info(f"Stored {len(new_items)} new items for {source_url}")
-                results[source_url] = self.item_storage.get_stored_items(source_url)
-            else:
-                log.info(f"No new items to store for {source_url}")
-                results[source_url] = []
+                # Filter and enhance quality items
+                if item["ranking"] >= self.min_threshold:
+                    if item["ranking"] >= self.max_threshold:
+                        full_content = await self.fetch_full_content(item["link"])
+                        if full_content:
+                            item["full_content"] = full_content
+                    items_by_url[source_url].append(item)
+                else:
+                    log.info(
+                        f"Discarding item {item['title']} "
+                        f"with ranking {item['ranking']}"
+                    )
 
-        return results
+            # Process each URL's items
+            results = {}
+            for source_url, items in items_by_url.items():
+                try:
+                    # Update progress for this source
+                    self.sync_progress.update_progress(source_url, len(items))
+
+                    # Handle new items
+                    new_items = self.item_storage.filter_new_items(source_url, items)
+
+                    if new_items:
+                        self.item_storage.store_items(source_url, new_items)
+                        log.info(f"Stored {len(new_items)} new items for {source_url}")
+                        results[source_url] = self.item_storage.get_stored_items(
+                            source_url
+                        )
+                        # Update completion status
+                        self.sync_progress.complete_source(
+                            source_url, len(items), len(new_items)
+                        )
+                    else:
+                        log.info(f"No new items to store for {source_url}")
+                        results[source_url] = []
+                        # Mark as complete with no new items
+                        self.sync_progress.complete_source(source_url, len(items), 0)
+                except Exception as e:
+                    log.error(f"Error processing items for {source_url}: {e}")
+                    self.sync_progress.fail_source(source_url, str(e))
+                    raise ContentAnalysisError(source_url, str(e))
+
+            return results
+
+        except Exception as e:
+            log.error(f"Error processing parsed items: {e}")
+            # Mark all sources as failed that haven't been completed
+            for source_url in items_by_url.keys():
+                if (
+                    source_url in self.sync_progress.sources
+                    and self.sync_progress.sources[source_url].status
+                    != SyncStatus.COMPLETED
+                ):
+                    self.sync_progress.fail_source(source_url, str(e))
+            raise ContentAnalysisError("multiple sources", str(e))
 
     @staticmethod
     def _extract_title(markdown: str) -> str:
