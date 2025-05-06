@@ -1,7 +1,8 @@
 from .base import BaseScreen
 from .config import AddItemScreen, ConfigScreen
 from .main import MainScreen
-from .modals.token_usage import TokenUsageModal
+from .modals.sync_status_modal import SyncStatusModal
+from .modals.token_usage_modal import TokenUsageModal
 from .resource.detail import ResourceDetailScreen
 
 # from .resource.markdown import ResourceMarkdownScreen
@@ -14,6 +15,7 @@ __all__ = [
     "AddItemScreen",
     "MainScreen",
     "TokenUsageModal",
+    "SyncStatusModal",
     "ResourceDetailScreen",
     # "ResourceMarkdownScreen",
     # "NoteInputModal",

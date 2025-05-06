@@ -6,14 +6,14 @@ from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
-from textual.widgets import DataTable, Label, ListItem, ListView, ProgressBar
+from textual.widgets import DataTable, Label, ListItem, ListView
 
 from aisignal.core.models import Resource
 from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
 from aisignal.screens import BaseScreen
 from aisignal.screens.config import ConfigScreen
+from aisignal.screens.modals.sync_status_modal import SyncStatusModal
 from aisignal.screens.resource.detail import ResourceDetailScreen
-from aisignal.screens.widgets.sync_widget import SyncStatusWidget
 
 
 class MainScreen(BaseScreen):
@@ -27,13 +27,16 @@ class MainScreen(BaseScreen):
     """
 
     BINDINGS = [
-        Binding("d", "delete", "Delete Resource"),
+        Binding("d", "delete", "Remove", key_display="d/del"),
+        Binding("delete", "delete", "Remove", show=False),
+        Binding("backspace", "delete", "Remove", show=False),
         Binding("s", "toggle_sort", "Toggle sort"),
         Binding("f", "sync", "Fetch content"),
         Binding("b", "toggle_filters", "Toggle sidebar"),
         Binding("c", "toggle_config", "Config"),
         Binding("r", "reset_filters", "Reset Filters"),
         Binding("q", "quit", "Quit application"),
+        Binding("escape", "quit", "Quit application", show=False),
     ]
 
     def __init__(self):
@@ -60,9 +63,6 @@ class MainScreen(BaseScreen):
                         yield ListView(id="category_filter")
                         yield Label("Sources")
                         yield ListView(id="source_filter")
-                    # Sync status section at bottom
-                    with Container(id="sync_container", classes="dock-bottom"):
-                        yield SyncStatusWidget(id="sync_status")
 
                 # Main content
                 with Vertical(id="main_content"):
@@ -86,10 +86,6 @@ class MainScreen(BaseScreen):
         table = self.query_one("#resource_list", DataTable)
         table.cursor_type = "row"
         table.add_columns("Title", "Source", "Categories", "Ranking", "Date")
-
-        # hide progress bar
-        progress = self.query_one("#sync_progress", ProgressBar)
-        progress.styles.visibility = "hidden"
 
         # Initialize filters
         self._setup_filters()
@@ -307,92 +303,91 @@ class MainScreen(BaseScreen):
         # self.app.notify_user("Starting content synchronization")
         self.is_syncing = True
 
-        # Get the sync widget and start tracking progress
-        sync_widget = self.query_one(SyncStatusWidget)
+        # Create and push the sync status modal
+        sync_modal = SyncStatusModal(self.app.content_service.sync_progress)
+        await self.app.push_screen(sync_modal)
 
         try:
             # Initialize progress tracking
             self.app.content_service.sync_progress.start_sync(
                 self.app.config_manager.sources
             )
-            # Forward the progress object to the widget
-            sync_widget.progress = self.app.content_service.sync_progress
+
+            async def fetch_source(url: str):
+                try:
+                    content = await self.app.content_service.fetch_content(url)
+                    return content if content else None
+                except ContentFetchError as ce:
+                    self.app.handle_error(f"Failed to fetch content: {ce}")
+                    sync_modal.progress.fail_source(url, str(ce))
+                return None
 
             # Step 1: Fetch content from all sources
-            content_results = []
-            for url in self.app.config_manager.sources:
-                self.log.info(f"Processing source: {url}")
-                self.log.info(" - Fetching markdown with Jina AI")
-                sync_widget.refresh()
+            self.log.info("Fetching content with JinaAI")
+            fetched = await asyncio.gather(
+                *[fetch_source(url) for url in self.app.config_manager.sources]
+            )
+            content_results = [r for r in fetched if r is not None]
 
-                try:
-                    content_result = await self.app.content_service.fetch_content(url)
-                    if content_result:
-                        content_results.append(content_result)
-                except ContentFetchError as e:
-                    self.app.handle_error(f"Failed to fetch content: {e}")
-                    sync_widget.progress.fail_source(url, str(e))
-                    continue
+            if not content_results:
+                return  # still run the finally section
 
-            # Step 2: Batch analyze all content
-            if content_results:
+            try:
+                #  Step 2: Batch analyze all content
                 self.log.info("Analyzing content with LLM")
-                try:
-                    config_manager = self.app.config_manager
-                    analyzed_results = await self.app.content_service.analyze_content(
-                        content_results,
-                        prompt_template=config_manager.content_extraction_prompt,
-                        # batch_size=config_manager.content_extraction_batch_size,
-                        batch_size=3500,
-                    )
+                sync_modal.progress.start_analysis()
+                config_manager = self.app.config_manager
+                analyzed_results = await self.app.content_service.analyze_content(
+                    content_results,
+                    prompt_template=config_manager.content_extraction_prompt,
+                    # batch_size=config_manager.content_extraction_batch_size,
+                    batch_size=8000,
+                )
 
-                    # Progress is updated by ContentService during analysis
-                    # We just need to handle the results
+                # Progress is updated by ContentService during analysis
+                # We just need to handle the results
 
-                    # Step 3: Process analyzed results
-                    min_threshold = self.app.content_service.min_threshold
-                    new_resources = []
-                    for url, items in analyzed_results.items():
-                        # Last 50% for processing
-                        if items == 0:
+                # Step 3: Process analyzed results
+                self.log.info("Processing content")
+                sync_modal.progress.start_processing()
+                min_threshold = self.app.content_service.min_threshold
+                new_resources = []
+                for url, items in analyzed_results.items():
+                    if items == 0:
+                        continue
+
+                    for item in items:
+                        try:
+                            resource = Resource(
+                                id=str(len(new_resources)),
+                                title=item["title"],
+                                url=item["link"],
+                                categories=item["categories"],
+                                ranking=item["ranking"],
+                                summary=item["summary"],
+                                full_content=item.get("full_content", ""),
+                                datetime=datetime.fromisoformat(item["first_seen"]),
+                                source=item["source_url"],
+                            )
+                            if resource.ranking >= min_threshold:
+                                new_resources.append(resource)
+                        except Exception as e:
+                            self.app.log.error(f"Error creating resource: {item} {e}")
                             continue
 
-                        for item in items:
-                            try:
-                                resource = Resource(
-                                    id=str(len(new_resources)),
-                                    title=item["title"],
-                                    url=item["link"],
-                                    categories=item["categories"],
-                                    ranking=item["ranking"],
-                                    summary=item["summary"],
-                                    full_content=item.get("full_content", ""),
-                                    datetime=datetime.fromisoformat(item["first_seen"]),
-                                    source=item["source_url"],
-                                )
-                                if resource.ranking >= min_threshold:
-                                    new_resources.append(resource)
-                            except Exception as e:
-                                self.app.log.error(
-                                    f"Error creating resource: {item} {e}"
-                                )
-                                continue
+                if new_resources:
+                    self.app.resource_manager.add_resources(new_resources)
+                    self.update_resource_list()
+                    self.app.notify_user(f"Added {len(new_resources)} new resources")
+                else:
+                    self.app.notify_user("No new resources found")
 
-                    if new_resources:
-                        self.app.resource_manager.add_resources(new_resources)
-                        self.update_resource_list()
-                        self.app.notify_user(
-                            f"Added {len(new_resources)} new resources"
-                        )
-                    else:
-                        self.app.notify_user("No new resources found")
-
-                except ContentAnalysisError as e:
-                    self.app.handle_error("Error analyzing content", e)
+            except ContentAnalysisError as e:
+                self.app.handle_error("Error analyzing content", e)
 
         finally:
             self.is_syncing = False
-            sync_widget.progress.complete_sync()
+            sync_modal.progress.complete_sync()
             self.update_resource_list()
 
     def update_resource_list(self, cursor_position: int | None = None) -> None:

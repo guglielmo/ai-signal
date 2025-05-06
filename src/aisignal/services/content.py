@@ -237,61 +237,61 @@ class ContentService:
 
         # Step 1: Initialize results and group contents needing analysis
         results = {}
-        contents_to_analyze = {}
+        pending_blocks = []
+        # First collect all content needing analysis
+        for result in content_results:
+            url = result["url"]
 
-        for content_result in content_results:
-            url = content_result["url"]
-            self.sync_progress.start_source(url)
-
-            # Step 1a: Skip unchanged content
-            if not content_result["diff"].has_changes:
-                log.info(f"No changes detected for {url}")
-                self.sync_progress.complete_source(
-                    url, 0, 0
-                )  # Mark as complete with no changes
+            if not result["diff"].has_changes:
+                log.info(f"No changes for {url}")
+                self.sync_progress.complete_source(url, 0, 0)
                 continue
 
-            # Step 1b: Get content blocks to analyze
-            if not content_result["diff"].added_blocks:
-                log.warning(f"Diff indicates changes but no added blocks for {url}")
+            blocks = result["diff"].added_blocks
+            if not blocks:
+                log.info(f"No new blocks to analyze for {url}")
                 continue
-            content_to_analyze = "\n\n".join(content_result["diff"].added_blocks)
-            log.info(
-                f"Analyzing {len(content_result['diff'].added_blocks)} "
-                f"new blocks for {url}"
-            )
-            log.debug(f"New blocks: {content_result['diff'].added_blocks}")
 
-            contents_to_analyze[url] = content_to_analyze
+            for block in blocks:
+                pending_blocks.append(
+                    {"url": url, "content": f"## {url}\n\n{block}\n\n"}
+                )
 
         # Step 2: Prepare batches for analysis
-        batches = []
         current_batch = []
-        current_batch_size = 0
+        current_size = 0
 
-        for url, content in contents_to_analyze.items():
-            content_section = f"## {url}\n\n{content}\n\n"
-            estimated_tokens = len(content_section) // 4  # rough estimation
-
-            if current_batch_size + estimated_tokens > batch_size and current_batch:
-                batches.append("\n".join(current_batch))
-                current_batch = [content_section]
-                current_batch_size = estimated_tokens
-            else:
-                current_batch.append(content_section)
-                current_batch_size += estimated_tokens
-
-        if current_batch:
-            batches.append("\n".join(current_batch))
-
-        # Step 3: Process each batch
-        categories_list = "\n".join(f"  - {cat}" for cat in self.categories)
-
-        for batch_content in batches:
-            batch_results = await self._process_batch_content(
-                batch_content, prompt_template, categories_list
+        async def process_batch(blocks_batch):
+            if not blocks_batch:
+                return {}
+            batch_content = "".join(b["content"] for b in blocks_batch)
+            log.info(
+                f"Processing batch of {len(blocks_batch)} blocks "
+                f"(~{len(batch_content) // 4} tokens)"
             )
-            results.update(batch_results)
+            return await self._process_batch_content(
+                batch_content,
+                prompt_template,
+                "\n".join(f"  - {cat}" for cat in self.categories),
+            )
+
+        for block in pending_blocks:
+            # Estimate size of this content's blocks
+            block_size = len(block["content"]) // 4  # Rough token estimate
+
+            # If adding this block would exceed batch size, process current batch
+            if current_size + block_size > batch_size and current_batch:
+                # Process current batch
+                results.update(await process_batch(current_batch))
+                current_batch = []
+                current_size = 0
+
+            # Add to current batch
+            current_batch.append(block)
+            current_size += block_size
+
+        # Process final batch
+        results.update(await process_batch(current_batch))
 
         return results
 
@@ -329,7 +329,8 @@ class ContentService:
             f"Categories\n==========\n{categories_list}\n\n"
             f"Content\n=======\n{content}\n"
         )
-        log.debug(f"PROMPT\n\n{full_prompt}\n")
+        # log.debug(f"PROMPT\n\n{full_prompt}\n")
+        log.info("Prompt sent to LLM")
 
         # Get AI response
         response = await self.openai_client.chat.completions.create(
@@ -342,7 +343,7 @@ class ContentService:
         self._track_token_usage(response.usage)
 
         returned_content = response.choices[0].message.content
-        log.debug(f"Content returned from AI: {returned_content}")
+        log.debug(f"Content returned from LLM:\n {returned_content}")
         return returned_content
 
     def _track_token_usage(self, usage):

@@ -129,32 +129,36 @@ MarkdownViewer {
     layout: horizontal;
 }
 
-#sync_container {
-    dock: bottom;
-    height: auto;
-    margin-top: 1;
+SyncStatusModal {
+    align: center middle;
+    background: rgba(0, 0, 0, 0.5);
 }
 
-#sync_status {
-    height: auto;
+SyncStatusModal > Vertical {
     background: $surface;
+    padding: 1 2;
+    width: 80;
+    min-height: 20;
+    max-height: 40;
+    height: auto;
+    border: heavy $primary;
+    opacity: 0.9;
 }
 
-#sync_status DataTable {
+SyncStatusModal .modal-title {
+    width: 100%;
+    content-align: center middle;
+    text-style: bold;
+    padding-bottom: 1;
+}
+
+SyncStatusModal DataTable {
     height: auto;
     margin: 1;
     background: $surface-darken-1;
 }
 
-#sync_status ProgressBar {
+SyncStatusModal ProgressBar {
     height: 1;
     margin: 1;
-}
-
-#sync_status #sync_header {
-    padding: 1;
-    background: $primary;
-    color: $text;
-    text-align: center;
-    text-style: bold;
 }

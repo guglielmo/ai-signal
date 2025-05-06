@@ -64,7 +64,8 @@ class ResourceDetailScreen(BaseScreen):
         new_bindings = BindingsMap()
 
         # Always present bindings
-        new_bindings.bind("d", "delete", "Delete")
+        new_bindings.bind("d", "delete", "Remove", key_display="d/del")
+        new_bindings.bind("delete", "delete", "Remove", show=False)
         new_bindings.bind("o", "export", "-> Obsidian")
         # new_bindings.bind("s", "share", "Share")
 
@@ -74,7 +75,7 @@ class ResourceDetailScreen(BaseScreen):
             new_bindings.bind("f", "fetch_full", "Re-fetch Full Content")
 
         new_bindings.bind("q", "app.pop_screen", "Close screen")
-        new_bindings.bind("escape", "app.pop_screen", "Close screen")
+        new_bindings.bind("escape", "app.pop_screen", "Close screen", show=False)
 
         self._bindings = new_bindings
 
