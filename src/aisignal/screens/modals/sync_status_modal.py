@@ -1,46 +1,54 @@
+from textual import log
 from textual.app import ComposeResult
-from textual.reactive import reactive
-from textual.widgets import DataTable, ProgressBar, Static
+from textual.binding import Binding
+from textual.containers import Container, Vertical
+from textual.screen import ModalScreen
+from textual.widgets import DataTable, Footer, Label, ProgressBar
 
 from aisignal.core.sync_status import SyncProgress, SyncStatus
 
 
-class SyncStatusWidget(Static):
-    """Widget displaying sync progress and status"""
+class SyncStatusModal(ModalScreen[None]):
+    """Modal screen displaying sync progress status."""
 
-    progress: reactive[SyncProgress] = reactive[SyncProgress](SyncProgress())
+    BINDINGS = [
+        Binding("q", "app.pop_screen", "Close"),
+        Binding("escape", "app.pop_screen", "Close"),
+    ]
+
+    def __init__(self, progress: SyncProgress = None):
+        super().__init__()
+        self.progress = progress
 
     def compose(self) -> ComposeResult:
-        """Create child widgets."""
-        yield Static("Sync Status", id="sync_header")
-        yield ProgressBar(total=100, id="sync_progress")
-        yield DataTable(id="sync_details")
+        with Vertical():
+            yield Label("Sync Status", classes="modal-title")
+
+            with Container():
+                yield ProgressBar(show_eta=False, id="sync_progress")
+                yield DataTable(id="sync_details")
+
+            yield Footer()
 
     def on_mount(self) -> None:
-        """Set up the data table columns"""
+        """Set up the data table columns and start refresh timer"""
         table = self.query_one(DataTable)
         table.add_columns("Source", "Status", "Items", "New", "Error")
         # Set up periodic refresh
-        self.set_interval(0.5, self.refresh_display)
+        self.set_interval(1, self.watch_progress)
 
-    def refresh_display(self) -> None:
-        """Refresh the display to show current progress"""
-        if self.progress:
-            self.watch_progress(self.progress)
-
-    def watch_progress(self, progress: SyncProgress) -> None:
+    def watch_progress(self) -> None:
         """Update display when progress changes"""
         # Update progress bar
         progress_bar = self.query_one(ProgressBar)
-        if progress.total_sources > 0:
-            percent = (progress.completed_sources / progress.total_sources) * 100
-            progress_bar.update(progress=percent)
+        progress_bar.update(total=100, progress=self.progress.overall_progress)
+        log.debug(f"Progress: {self.progress.overall_progress}")
 
         # Update status table
         table = self.query_one(DataTable)
         table.clear()
 
-        for source in progress.sources.values():
+        for source in self.progress.sources.values():
             status_display = {
                 SyncStatus.PENDING: "⏳",
                 SyncStatus.IN_PROGRESS: "🔄",
