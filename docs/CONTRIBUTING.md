@@ -10,10 +10,10 @@ AI Signal is a terminal-based AI curator that turns information noise into meani
    # Clone the repository
    git clone https://github.com/YOUR-USERNAME/ai-signal.git
    cd ai-signal
-   
+
    # Install dependencies
    poetry install
-   
+
    # Activate virtual environment
    poetry shell
    ```
@@ -37,7 +37,7 @@ AI Signal is a terminal-based AI curator that turns information noise into meani
 - Write clear commit messages following the conventional commit format:
   ```
   feat(ui): add configuration screen
-  
+
   - Implements TUI-based configuration panel accessible via 'c' key
   - Adds form fields for API keys, sources, and categories
   - Fixes issue #42
@@ -186,10 +186,10 @@ poetry run pytest tests/test_app.py::test_notify_user
 def test_feature():
     # Arrange
     expected = ...
-    
+
     # Act
     result = feature()
-    
+
     # Assert
     assert result == expected
 ```
@@ -204,13 +204,82 @@ from textual.pilot import Pilot
 async def test_ui_component(pilot: Pilot):
     # Navigate UI
     await pilot.press("c")  # Open config
-    
+
     # Assert UI state
     assert pilot.app.query_one("#config_panel").visible
-    
+
     # Interact with form
     await pilot.click("#save_button")
 ```
+
+## Release Process
+
+### Versioning
+
+AI Signal follows [Semantic Versioning](https://semver.org/) (SemVer) for version numbers:
+- **MAJOR** version for incompatible API changes
+- **MINOR** version for backward-compatible functionality additions
+- **PATCH** version for backward-compatible bug fixes
+
+### Bumping the Version
+
+The project uses Poetry for dependency and package management. To bump the version:
+
+1. Update the version in `pyproject.toml`:
+   ```bash
+   # For patch version (0.7.2 -> 0.7.3)
+   poetry version patch
+
+   # For minor version (0.7.2 -> 0.8.0)
+   poetry version minor
+
+   # For major version (0.7.2 -> 1.0.0)
+   poetry version major
+   ```
+
+2. Build the package to verify everything works:
+   ```bash
+   poetry build
+   ```
+
+### Creating a GitHub Release
+
+1. Commit the version change:
+   ```bash
+   git add pyproject.toml
+   git commit -m "chore: bump version to $(poetry version -s)"
+   ```
+
+2. Create a git tag for the new version:
+   ```bash
+   git tag v$(poetry version -s)
+   ```
+
+3. Push the changes and tag to GitHub:
+   ```bash
+   git push origin main
+   git push origin v$(poetry version -s)
+   ```
+
+4. Create a new release on GitHub:
+   - Go to the [GitHub repository](https://github.com/guglielmo/ai-signal/releases)
+   - Click "Draft a new release"
+   - Select the tag you just pushed
+   - Add a title (usually "v[VERSION]")
+   - Add release notes describing the changes
+   - Attach the built distribution files from the `dist/` directory
+   - Publish the release
+
+### Release Checklist
+
+- [ ] Update version in pyproject.toml
+- [ ] Update CHANGELOG.md (if applicable)
+- [ ] Update documentation for new features
+- [ ] Build and test the package locally
+- [ ] Commit changes and create a git tag
+- [ ] Push changes and tag to GitHub
+- [ ] Create a GitHub release
+- [ ] Verify the package is installable from PyPI (if published)
 
 ## Questions?
 
