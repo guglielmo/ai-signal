@@ -279,7 +279,28 @@ The project uses Poetry for dependency and package management. To bump the versi
 - [ ] Commit changes and create a git tag
 - [ ] Push changes and tag to GitHub
 - [ ] Create a GitHub release
-- [ ] Verify the package is installable from PyPI (if published)
+- [ ] Wait for the GitHub Actions workflow to publish the package to PyPI
+- [ ] Verify the package is installable from PyPI
+
+### Publishing to PyPI
+
+The project uses GitHub Actions to automatically publish the package to PyPI when a new GitHub release is created. The workflow is defined in `.github/workflows/publish.yml`.
+
+#### Setting up PyPI Token
+
+To enable automatic publishing to PyPI, you need to set up a PyPI API token as a GitHub secret:
+
+1. Create a PyPI account if you don't have one at [https://pypi.org/account/register/](https://pypi.org/account/register/)
+2. Generate an API token at [https://pypi.org/manage/account/token/](https://pypi.org/manage/account/token/)
+3. Add the token as a GitHub secret:
+   - Go to your GitHub repository
+   - Navigate to Settings > Secrets and variables > Actions
+   - Click "New repository secret"
+   - Name: `PYPI_TOKEN`
+   - Value: Your PyPI API token
+   - Click "Add secret"
+
+Once the secret is set up, the GitHub Actions workflow will automatically publish the package to PyPI when you create a new release on GitHub.
 
 ## Questions?
 
