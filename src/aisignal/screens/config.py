@@ -1,17 +1,16 @@
+import yaml
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, ScrollableContainer
-from textual.reactive import Reactive
-from textual.screen import Screen
-from textual.widgets import Button, Input, Label, OptionList
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Button, Label, TextArea
 
 from aisignal.screens import BaseScreen
 
 
 class ConfigScreen(BaseScreen):
     """
-    Represents a configuration screen allowing users to input and modify configuration
-    settings such as API keys, categories, sources, and Obsidian-related paths.
+    Represents a configuration screen allowing users to edit the configuration
+    file as raw YAML text in a text editor with syntax validation.
 
     Attributes:
       BINDINGS: Defines key bindings for actions such as popping the screen and
@@ -19,87 +18,94 @@ class ConfigScreen(BaseScreen):
     """
 
     BINDINGS = [
-        Binding("s", "save", "Save Config"),
-        Binding("q", "app.pop_screen", "Close screen", show=True),
-        Binding("escape", "app.pop_screen", "Close screen", show=True),
+        Binding(key="ctrl+s", action="save", description="Save Config", show=True),
+        Binding(
+            key="ctrl+q", action="app.pop_screen", description="Close screen", show=True
+        ),
     ]
 
     def compose_content(self) -> ComposeResult:
         """
-        Compose the structure and content of the user interface for API keys,
-        categories, sources, and Obsidian settings.
-        This method generates the UI components needed for user input and
-        configuration management.
+        Compose the structure and content of the user interface for editing
+        the configuration file as raw YAML text.
 
-        :return: A generator yielding UI components for
-          each section of the configuration.
+        :return: A generator yielding UI components for the text-based editor.
         """
-        with ScrollableContainer():
-            yield Label("API Keys", classes="section-header")
-            with Container(classes="section"):
-                yield Label("JinaAI API Key")
-                yield Input(
-                    value=self.app.config_manager.jina_api_key,
-                    password=True,
-                    id="jina_api_key",
-                )
-                yield Label("OpenAI API Key")
-                yield Input(
-                    value=self.app.config_manager.openai_api_key,
-                    password=True,
-                    id="openai_api_key",
-                )
+        with Vertical():
+            yield Label("Configuration Editor", classes="section-header")
+            yield TextArea(id="config_editor", language="yaml")
+            with Horizontal(classes="button-row"):
+                yield Button("Save", id="save_config", variant="primary")
+                yield Button("Cancel", id="cancel_config")
 
-            yield Label("Categories", classes="section-header")
-            with Container(classes="section"):
-                yield OptionList(*self.app.config_manager.categories, id="categories")
-                yield Button("Add Category", id="add_category")
+    def on_mount(self) -> None:
+        """Called when the screen is mounted."""
+        # Load the raw YAML configuration content into the text area
+        config_path = self.app.config_manager.config_path
+        try:
+            if config_path.exists():
+                with open(config_path, "r") as f:
+                    config_content = f.read()
+            else:
+                # If config doesn't exist, show a default template
+                config_content = """api_keys:
+  jinaai: ""
+  openai: ""
 
-            yield Label("Sources", classes="section-header")
-            with Container(classes="section"):
-                yield OptionList(*self.app.config_manager.sources, id="sources")
-                yield Button("Add Source", id="add_source")
+categories: []
+sources: []
 
-            yield Label("Obsidian Settings", classes="section-header")
-            with Container(classes="section"):
-                yield Label("Vault Path")
-                yield Input(
-                    value=self.app.config_manager.obsidian_vault_path,
-                    id="vault_path",
-                )
-                yield Label("Template Path")
-                yield Input(
-                    value=self.app.config_manager.obsidian_template_path or "",
-                    id="template_path",
-                )
+obsidian:
+  vault_path: ""
+  template_path: null
+
+sync_interval: 24
+min_threshold: 0.0
+max_threshold: 100.0
+
+prompts:
+  content_extraction: ""
+"""
+
+            self.query_one("#config_editor").text = config_content
+            # Focus the text editor to allow immediate typing
+            self.query_one("#config_editor").focus()
+        except Exception as e:
+            self.notify(f"Error loading configuration: {str(e)}")
+            self.query_one("#config_editor").text = "# Error loading configuration"
 
     def action_save(self) -> None:
         """
-        Saves the current configuration settings by collecting input values and storing
-        them using the application's configuration manager. Notifies the user of success
-        or failure during the save operation.
+        Saves the configuration by validating YAML syntax and writing to file.
+        Shows success message and closes screen if valid, or error message if invalid.
+        """
+        self._save_config()
 
-        :raises: Exception if there is an error in saving the configuration.
+    def _save_config(self) -> None:
+        """
+        Validates and saves the YAML configuration from the text editor.
         """
         try:
-            # Collect values from inputs
-            config = {
-                "api_keys": {
-                    "jinaai": self.query_one("#jina_api_key").value,
-                    "openai": self.query_one("#openai_api_key").value,
-                },
-                "categories": [
-                    item.label for item in self.query_one("#categories").options
-                ],
-                "sources": [item.label for item in self.query_one("#sources").options],
-                "obsidian": {
-                    "vault_path": self.query_one("#vault_path").value,
-                    "template_path": self.query_one("#template_path").value or None,
-                },
-            }
+            # Get the YAML content from the text editor
+            config_content = self.query_one("#config_editor").text
 
-            # Save configuration
-            self.app.config_manager.save(config)
+            # Validate YAML syntax
+            try:
+                yaml.safe_load(config_content)
+            except yaml.YAMLError as e:
+                self.notify(f"YAML syntax error: {str(e)}")
+                return
+
+            # Write the content directly to the config file
+            config_path = self.app.config_manager.config_path
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(config_path, "w") as f:
+                f.write(config_content)
+
+            # Reload the configuration manager's config
+            self.app.config_manager.config = self.app.config_manager._load_config()
+
             self.notify("Configuration saved successfully")
             self.app.pop_screen()
 
@@ -108,80 +114,12 @@ class ConfigScreen(BaseScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """
-        Handles button press events. Depending on the button id, this function
-        navigates to a relevant screen to add a category or source.
+        Handles button press events for Save and Cancel buttons.
 
         :param event: The button press event containing information about
          the pressed button and related context.
         """
-        if event.button.id == "add_category":
-            self.app.push_screen(
-                AddItemScreen("Add Category", self.query_one("#categories").append)
-            )
-        elif event.button.id == "add_source":
-            self.app.push_screen(
-                AddItemScreen("Add Source", self.query_one("#sources").append)
-            )
-
-
-class AddItemScreen(Screen):
-    """
-    A screen for adding a new item with a title, input, and action buttons.
-
-    Attributes:
-      title: A reactive string representing the screen title, modifiable by UI
-        state changes.
-      callback: A function to be called with the new item's value when the "Add"
-        button is pressed.
-
-    Methods:
-      compose: Sets up the UI layout by adding title, input field, and buttons.
-      on_button_pressed: Handles button press events to add an item or cancel
-        the action.
-    """
-
-    def __init__(self, title: Reactive[str | None], callback) -> None:
-        """
-        Initializes a new instance of the class with a given title and callback.
-
-        :param title: A reactive string that can be None. Represents the title
-          of the instance.
-        :param callback: A callable object that will be executed during the
-          instance's lifecycle.
-        """
-        super().__init__()
-        self.title = title
-        self.callback = callback
-
-    def compose(self) -> ComposeResult:
-        """
-        Generates and yields a container with user interface elements for adding
-        new items. The container includes a label displaying the title, an input
-        field for new item entry, and buttons for adding or canceling the operation.
-
-        :return: A ComposeResult containing a container with label, input, and
-        buttons for the user interface.
-        """
-        yield Container(
-            Label(self.title),
-            Input(id="new_item"),
-            Button("Add", id="add"),
-            Button("Cancel", id="cancel"),
-        )
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """
-        Handles the button pressed event. Depending on the button ID, it either adds
-        a new item or cancels the action by popping the current screen.
-
-        :param event: Button pressed event containing information about the button that
-          was pressed.
-        :return: None
-        """
-        if event.button.id == "add":
-            new_item = self.query_one("#new_item").value
-            if new_item:
-                self.callback(new_item)
-                self.app.pop_screen()
-        elif event.button.id == "cancel":
+        if event.button.id == "save_config":
+            self._save_config()
+        elif event.button.id == "cancel_config":
             self.app.pop_screen()

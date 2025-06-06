@@ -34,7 +34,7 @@ class ContentCuratorApp(App):
     """
 
     CSS_PATH = "styles/app.tcss"
-    COMMAND_PALETTE_BINDING = "slash"
+    COMMAND_PALETTE_BINDING = "ctrl+p"
 
     def __init__(self, config_path: Optional[Path] = None):
         """

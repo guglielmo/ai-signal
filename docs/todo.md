@@ -4,21 +4,28 @@ This document outlines the pending tasks and future enhancements for the AI Sign
 
 ## High Priority Tasks
 
-1. **Complete TUI Configuration Interface**
-   - Implement the configuration panel accessible via the 'c' key
-   - Currently marked as [TODO] in the configuration.md documentation
-
-2. **Fix CONTRIBUTING.md Template**
-   - Update the placeholder "[Project Name]" in the CONTRIBUTING.md file
-   - Customize the contributing guidelines for AI Signal specifically
-
-3. **Implement Error Handling Improvements**
-   - Add more robust error handling for API failures
-   - Implement graceful degradation when services are unavailable
-
-4. **Add Unit Tests**
-   - Increase test coverage for core components
-   - Add tests for UI components using Textual's testing utilities
+ 1. Complete TUI Configuration Interface
+    - [x] Implement a new ConfigScreen class in src/aisignal/screens/config.py based on Textual's text component
+    - [x] Connect the screen to the existing key binding 'c' in the main app
+    - [x] Update the config manager to handle saving changes from the UI
+  2. Fix CONTRIBUTING.md Template
+    - [x] Simple text replacement of "[Project Name]" with "AI Signal"
+    - [x] Review and customize the contributing guidelines to match project conventions
+  3. [ ] Re-engineer the app according to the `architecture_reengineering.md`, so that it can be a multi-ui, service-based app
+  4. Implement Error Handling Improvements
+    - [ ] Create a dedicated error handling module in src/aisignal/core/error_handler.py
+    - [ ] Implement specific error types for different failure scenarios (API failures, network issues, etc.)
+    - [ ] Add retry mechanisms for API calls with exponential backoff
+    - [ ] Update the UI to show meaningful error messages and recovery options
+  5. Add Unit Tests
+    - [ ] Focus on core functionality first:
+      - [ ] Create tests for ConfigManager and configuration validation
+      - [ ] Add tests for ResourceManager filtering and sorting
+      - [ ]Add tests for ContentService processing logic
+    - [ ] For UI components:
+    - [ ] Use Textual's pilot testing utilities to simulate user interactions
+      - [ ] Create snapshot tests for UI components
+      - [ ] Test keyboard navigation and event handling
 
 ## Feature Enhancements
 

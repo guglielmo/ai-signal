@@ -38,6 +38,13 @@ Button {
     margin: 1;
 }
 
+.button-row {
+    width: 100%;
+    height: auto;
+    layout: horizontal;
+    align-horizontal: center;
+}
+
 #header_info {
     height: auto;
 }

@@ -1,9 +1,23 @@
-# Contributing to [Project Name]
+# Contributing to AI Signal
+
+AI Signal is a terminal-based AI curator that turns information noise into meaningful signal. We welcome contributions that help improve content filtering, UI experience, AI integration, and new features.
 
 ## Getting Started
 
 1. Fork the repository
-2. Create a new feature branch from `main`:
+2. Set up your development environment:
+   ```bash
+   # Clone the repository
+   git clone https://github.com/YOUR-USERNAME/ai-signal.git
+   cd ai-signal
+   
+   # Install dependencies
+   poetry install
+   
+   # Activate virtual environment
+   poetry shell
+   ```
+3. Create a new feature branch from `main`:
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -20,12 +34,13 @@
 ### Best Practices
 
 - Keep commits atomic and focused
-- Write clear commit messages:
+- Write clear commit messages following the conventional commit format:
   ```
-  feat(component): add new feature X
+  feat(ui): add configuration screen
   
-  - Implements functionality Y
-  - Fixes issue #123
+  - Implements TUI-based configuration panel accessible via 'c' key
+  - Adds form fields for API keys, sources, and categories
+  - Fixes issue #42
   ```
 - Rebase your branch on `main` before submitting merge request
 - Squash commits before merging
@@ -48,7 +63,11 @@
 - [ ] Commits are squashed and well-documented
 - [ ] Tests are passing
 - [ ] Documentation is updated
-- [ ] Code follows style guide
+- [ ] Code follows style guide (Black, isort, Flake8)
+- [ ] Type hints are used consistently
+- [ ] TUI components follow Textual best practices
+- [ ] Configuration changes are backward compatible
+- [ ] Token usage is tracked properly (if using AI services)
 
 ## Python Coding Standards
 
@@ -82,9 +101,29 @@ ai-signal/
 ├── src/
 │   └── aisignal/
 │       ├── __init__.py
+│       ├── app.py
+│       ├── cli.py
 │       ├── core/
-│       ├── ui/
-│       └── utils/
+│       │   ├── config.py
+│       │   ├── config_schema.py
+│       │   ├── export.py
+│       │   ├── filters.py
+│       │   ├── models.py
+│       │   ├── resource_manager.py
+│       │   ├── sync_exceptions.py
+│       │   ├── sync_status.py
+│       │   └── token_tracker.py
+│       ├── screens/
+│       │   ├── base.py
+│       │   ├── config.py
+│       │   ├── main.py
+│       │   ├── modals/
+│       │   └── resource/
+│       ├── services/
+│       │   ├── content.py
+│       │   └── storage.py
+│       └── styles/
+│           └── app.tcss
 ├── tests/
 ├── docs/
 └── pyproject.toml
@@ -92,11 +131,11 @@ ai-signal/
 
 ### Code Quality Tools
 
-- Black for formatting
-- isort for import sorting
+- Black for formatting (line length 88)
+- isort for import sorting (profile=black)
 - Flake8 for linting
-- Mypy for type checking
-- Bandit for security checks
+- pytest for testing
+- pre-commit for git hooks
 
 ### Documentation
 
@@ -125,6 +164,22 @@ def process_data(input_data: dict) -> list:
 - Name test files with `test_` prefix
 - Use fixtures for test setup
 - Aim for 80%+ coverage
+- Use pytest-cov to check coverage
+
+### Running Tests
+```bash
+# Run all tests
+poetry run pytest
+
+# Run with coverage report
+poetry run pytest --cov=src/aisignal
+
+# Run specific test file
+poetry run pytest tests/test_app.py
+
+# Run specific test
+poetry run pytest tests/test_app.py::test_notify_user
+```
 
 ### Example Test Structure
 ```python
@@ -139,6 +194,26 @@ def test_feature():
     assert result == expected
 ```
 
+### Testing UI Components
+
+For testing Textual UI components:
+
+```python
+from textual.pilot import Pilot
+
+async def test_ui_component(pilot: Pilot):
+    # Navigate UI
+    await pilot.press("c")  # Open config
+    
+    # Assert UI state
+    assert pilot.app.query_one("#config_panel").visible
+    
+    # Interact with form
+    await pilot.click("#save_button")
+```
+
 ## Questions?
 
-Open an issue or contact the maintainers for help.
+- Open an issue in the [GitHub repository](https://github.com/guglielmo/ai-signal/issues)
+- Contact the project maintainer: Guglielmo Celata ([@guglielmo](https://github.com/guglielmo))
+- Join the discussion on Mastodon: [@guille@mastodon.uno](https://mastodon.uno/@guille)

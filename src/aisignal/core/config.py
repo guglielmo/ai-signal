@@ -107,6 +107,14 @@ class ConfigManager:
         """
         return self.config.max_threshold
 
+    @property
+    def sync_interval(self) -> int:
+        """Gets the sync interval value from the current configuration.
+
+        :return: The sync interval in hours as an integer.
+        """
+        return self.config.sync_interval
+
     def save(self, new_config: dict) -> None:
         """
         Saves a new configuration by merging it with the existing configuration to
@@ -118,8 +126,7 @@ class ConfigManager:
         :type new_config: dict
         :returns: None
         """
-        # Merge with existing config to preserve any unmodified settings
-
+        # Create updated configuration with all values from new_config
         updated_config = {
             "api_keys": new_config["api_keys"],
             "categories": new_config["categories"],
@@ -128,7 +135,7 @@ class ConfigManager:
             "sync_interval": new_config["sync_interval"],
             "max_threshold": new_config["max_threshold"],
             "min_threshold": new_config["min_threshold"],
-            "prompts": self.config.prompts.to_dict(),  # Preserve existing prompts
+            "prompts": new_config.get("prompts", self.config.prompts.to_dict()),
         }
 
         # Create parent directories if they don't exist
@@ -137,3 +144,6 @@ class ConfigManager:
         # Save to file
         with open(self.config_path, "w") as f:
             yaml.safe_dump(updated_config, f)
+
+        # Reload configuration
+        self.config = self._load_config()
