@@ -21,6 +21,7 @@ class Resource:
     """
 
     id: str
+    user_id: str
     title: str
     url: str
     categories: List[str]
@@ -36,6 +37,7 @@ class Resource:
         """Convert to dict for compatibility with other models."""
         return {
             "id": self.id,
+            "user_id": self.user_id,
             "title": self.title,
             "url": self.url,
             "categories": self.categories,
@@ -60,6 +62,7 @@ class Resource:
 
         return cls(
             id=data["id"],
+            user_id=data["user_id"],
             title=data["title"],
             url=data["url"],
             categories=data["categories"],
