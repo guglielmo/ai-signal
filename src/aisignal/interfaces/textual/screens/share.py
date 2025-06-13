@@ -3,7 +3,7 @@ from textual.containers import Container
 from textual.widgets import Button
 
 from aisignal.core.models import Resource
-from aisignal.screens import BaseScreen
+from aisignal.interfaces.textual.screens.base import BaseScreen
 
 
 class ShareScreen(BaseScreen):

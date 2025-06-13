@@ -10,10 +10,10 @@ from textual.widgets import DataTable, Label, ListItem, ListView
 
 from aisignal.core.models import Resource
 from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
-from aisignal.screens import BaseScreen
-from aisignal.screens.config import ConfigScreen
-from aisignal.screens.modals.sync_status_modal import SyncStatusModal
-from aisignal.screens.resource.detail import ResourceDetailScreen
+from aisignal.interfaces.textual.screens.base import BaseScreen
+from aisignal.interfaces.textual.screens.config import ConfigScreen
+from aisignal.interfaces.textual.screens.modals.sync_status_modal import SyncStatusModal
+from aisignal.interfaces.textual.screens.resource.detail import ResourceDetailScreen
 
 
 class MainScreen(BaseScreen):
@@ -129,6 +129,7 @@ class MainScreen(BaseScreen):
                 try:
                     resource = Resource(
                         id=item["id"],
+                        user_id="default_user",
                         title=item["title"],
                         url=item["link"],
                         categories=item["categories"],
@@ -360,6 +361,7 @@ class MainScreen(BaseScreen):
                         try:
                             resource = Resource(
                                 id=str(len(new_resources)),
+                                user_id="default_user",
                                 title=item["title"],
                                 url=item["link"],
                                 categories=item["categories"],

@@ -4,7 +4,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Label, TextArea
 
-from aisignal.screens import BaseScreen
+from aisignal.interfaces.textual.screens.base import BaseScreen
 
 
 class ConfigScreen(BaseScreen):
