@@ -6,7 +6,7 @@ from textual.containers import Container, Vertical
 from textual.widgets import Label, LoadingIndicator, MarkdownViewer
 
 from aisignal.core.models import Resource
-from aisignal.interfaces.textual.screens.base import BaseScreen
+from aisignal.ui.textual.screens.base import BaseScreen
 
 
 class ResourceDetailScreen(BaseScreen):

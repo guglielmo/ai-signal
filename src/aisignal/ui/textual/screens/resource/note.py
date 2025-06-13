@@ -3,7 +3,7 @@ from textual.binding import Binding
 from textual.widgets import TextArea
 
 from aisignal.core.models import Resource
-from aisignal.interfaces.textual.screens.base import BaseScreen
+from aisignal.ui.textual.screens.base import BaseScreen
 
 
 class NoteInputModal(BaseScreen):

@@ -9,10 +9,10 @@ from aisignal.core.export import ExportManager
 from aisignal.core.filters import ResourceFilterState
 from aisignal.core.resource_manager import ResourceManager
 from aisignal.core.token_tracker import TokenTracker
-from aisignal.interfaces.textual.screens.main import MainScreen
-from aisignal.interfaces.textual.screens.modals.token_usage_modal import TokenUsageModal
 from aisignal.services.content import ContentService
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
+from aisignal.ui.textual.screens.main import MainScreen
+from aisignal.ui.textual.screens.modals.token_usage_modal import TokenUsageModal
 
 
 class ContentCuratorApp(App):

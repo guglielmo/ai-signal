@@ -10,10 +10,10 @@ from textual.widgets import DataTable, Label, ListItem, ListView
 
 from aisignal.core.models import Resource
 from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
-from aisignal.interfaces.textual.screens.base import BaseScreen
-from aisignal.interfaces.textual.screens.config import ConfigScreen
-from aisignal.interfaces.textual.screens.modals.sync_status_modal import SyncStatusModal
-from aisignal.interfaces.textual.screens.resource.detail import ResourceDetailScreen
+from aisignal.ui.textual.screens.base import BaseScreen
+from aisignal.ui.textual.screens.config import ConfigScreen
+from aisignal.ui.textual.screens.modals.sync_status_modal import SyncStatusModal
+from aisignal.ui.textual.screens.resource.detail import ResourceDetailScreen
 
 
 class MainScreen(BaseScreen):
