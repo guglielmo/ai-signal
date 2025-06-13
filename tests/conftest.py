@@ -50,13 +50,10 @@ def pytest_collection_modifyitems(config, items):
 # Event Loop Configuration for Async Tests
 # ============================================================================
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# Note: Using pytest-asyncio's built-in event loop management instead of custom fixture
+# to avoid deprecation warnings. For different scopes,
+# use @pytest.mark.asyncio(scope="...")
+# on individual test functions or classes.
 
 
 # ============================================================================

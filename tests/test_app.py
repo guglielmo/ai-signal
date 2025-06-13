@@ -43,6 +43,9 @@ def test_content_curator_app_initialization(
         categories=["cat1", "cat2"],
         markdown_storage=app.markdown_storage,
         item_storage=app.item_storage,
+        token_tracker=app.token_tracker,
+        min_threshold=app.config_manager.min_threshold,
+        max_threshold=app.config_manager.max_threshold,
     )
     mock_export_manager.assert_called_once_with("/path/to/vault", "/path/to/template")
 

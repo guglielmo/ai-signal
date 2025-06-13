@@ -179,11 +179,15 @@ class MockConfigManager(IConfigManager):
 
     def __init__(self):
         self.configs: Dict[str, Dict[str, Any]] = {}
+        self._categories = ["AI", "Programming", "Data Science"]
+        self._sources = ["https://example.com"]
+        self._min_threshold = 50.0
+        self._max_threshold = 80.0
 
     @property
     def categories(self) -> List[str]:
         """Gets the list of categories from the configuration."""
-        return ["AI", "Programming", "Data Science"]
+        return self._categories
 
     @property
     def sources(self) -> List[str]:
@@ -219,12 +223,12 @@ class MockConfigManager(IConfigManager):
     @property
     def min_threshold(self) -> float:
         """Returns the minimum threshold value set in the current configuration."""
-        return 50.0
+        return self._min_threshold
 
     @property
     def max_threshold(self) -> float:
         """Gets the maximum threshold value from the current configuration."""
-        return 80.0
+        return self._max_threshold
 
     @property
     def sync_interval(self) -> int:
@@ -241,6 +245,85 @@ class MockConfigManager(IConfigManager):
         """
         # In the mock implementation, we don't actually save anything
         pass
+
+    async def get_user_config(self, user_context: UserContext) -> Dict[str, Any]:
+        """
+        Retrieves the user configuration for a given user context.
+
+        Args:
+            user_context: The user context containing user identification.
+
+        Returns:
+            Dict containing user configuration data.
+        """
+        return {
+            "categories": self.categories,
+            "sources": self.sources,
+            "api_keys": {
+                "openai": self.openai_api_key,
+                "jinaai": self.jina_api_key,
+            },
+            "obsidian": {
+                "vault_path": self.obsidian_vault_path,
+                "template_path": self.obsidian_template_path,
+            },
+            "prompts": {
+                "content_extraction": self.content_extraction_prompt,
+            },
+            "sync_interval": self.sync_interval,
+            "min_threshold": self.min_threshold,
+            "max_threshold": self.max_threshold,
+        }
+
+    async def update_user_config(
+        self, user_context: UserContext, updates: Dict[str, Any]
+    ) -> OperationResult:
+        """
+        Updates the user configuration with the provided updates.
+
+        Args:
+            user_context: The user context containing user identification.
+            updates: Dictionary containing configuration updates.
+
+        Returns:
+            OperationResult indicating success or failure.
+        """
+        # Update internal state for testing
+        if "categories" in updates:
+            self._categories = updates["categories"]
+        if "min_threshold" in updates:
+            self._min_threshold = updates["min_threshold"]
+        if "max_threshold" in updates:
+            self._max_threshold = updates["max_threshold"]
+
+        return OperationResult.success(data={"updated_fields": list(updates.keys())})
+
+    async def get_categories(self, user_context: UserContext) -> List[str]:
+        """
+        Retrieves the categories for a given user context.
+
+        Args:
+            user_context: The user context containing user identification.
+
+        Returns:
+            List of category strings.
+        """
+        return self.categories
+
+    async def get_thresholds(self, user_context: UserContext) -> Dict[str, float]:
+        """
+        Retrieves the threshold values for a given user context.
+
+        Args:
+            user_context: The user context containing user identification.
+
+        Returns:
+            Dict containing threshold values.
+        """
+        return {
+            "min_threshold": self.min_threshold,
+            "max_threshold": self.max_threshold,
+        }
 
 
 class MockContentService(IContentService):

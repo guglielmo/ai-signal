@@ -19,6 +19,9 @@ def sample_config():
             "template_path": "/path/to/template",
         },
         "prompts": {"content_extraction": "test prompt"},
+        "sync_interval": 24,
+        "min_threshold": 50.0,
+        "max_threshold": 80.0,
     }
 
 
