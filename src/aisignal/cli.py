@@ -9,7 +9,7 @@ from rich.console import Console
 
 from aisignal.core.config_schema import AppConfiguration
 
-from .app import ContentCuratorApp
+from .interfaces.textual.app import ContentCuratorApp
 
 console = Console()
 app = typer.Typer(

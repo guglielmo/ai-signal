@@ -7,6 +7,7 @@ def test_resource_creation():
     """Test Resource dataclass creation."""
     resource = Resource(
         id="1",
+        user_id="default_user",
         title="Test",
         url="https://test.com",
         categories=["AI/ML"],

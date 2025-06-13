@@ -4,16 +4,15 @@ from typing import Iterable, Optional
 from textual.app import App, SystemCommand
 from textual.screen import Screen
 
+from aisignal.core.config import ConfigManager
+from aisignal.core.export import ExportManager
 from aisignal.core.filters import ResourceFilterState
+from aisignal.core.resource_manager import ResourceManager
 from aisignal.core.token_tracker import TokenTracker
-from aisignal.screens import TokenUsageModal
-from aisignal.screens.main import MainScreen
+from aisignal.interfaces.textual.screens.main import MainScreen
+from aisignal.interfaces.textual.screens.modals.token_usage_modal import TokenUsageModal
+from aisignal.services.content import ContentService
 from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
-
-from .core.config import ConfigManager
-from .core.export import ExportManager
-from .core.resource_manager import ResourceManager
-from .services.content import ContentService
 
 
 class ContentCuratorApp(App):

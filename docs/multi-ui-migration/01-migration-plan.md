@@ -44,14 +44,14 @@ Each step adds **only** what's needed for the next step, following YAGNI and KIS
 
 ### Tuesday-Thursday (6 hours total): Foundation Setup
 **Daily tasks (2 hours each)**:
-- [ ] Set up new directory structure
-- [ ] Create base test framework with mock implementations
-- [ ] Document architectural decisions for this phase
+- [x] Set up new directory structure
+- [x] Create base test framework with mock implementations
+- [x] Document architectural decisions for this phase
 
 **Deliverables**:
-- [ ] New directory structure implemented
-- [ ] Basic test framework with mock services
-- [ ] `docs/sprint1_architecture_decisions.md`
+- [x] New directory structure implemented
+- [x] Basic test framework with mock services
+- [x] `docs/02-architecture_decisions.md` contains implemented and adopted decisions in sprint 1
 
 ### Friday (4-6 hours): Integration Preparation
 **Goal**: Prepare for actual implementation
