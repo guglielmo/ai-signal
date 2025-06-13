@@ -2,16 +2,16 @@
 
 from unittest.mock import Mock, patch
 
-from aisignal.interfaces.textual.app import ContentCuratorApp
+from aisignal.ui.textual.app import ContentCuratorApp
 
 
-@patch("aisignal.interfaces.textual.app.ConfigManager")
-@patch("aisignal.interfaces.textual.app.ResourceFilterState")
-@patch("aisignal.interfaces.textual.app.ResourceManager")
-@patch("aisignal.interfaces.textual.app.MarkdownSourceStorage")
-@patch("aisignal.interfaces.textual.app.ParsedItemStorage")
-@patch("aisignal.interfaces.textual.app.ContentService")
-@patch("aisignal.interfaces.textual.app.ExportManager")
+@patch("aisignal.ui.textual.app.ConfigManager")
+@patch("aisignal.ui.textual.app.ResourceFilterState")
+@patch("aisignal.ui.textual.app.ResourceManager")
+@patch("aisignal.ui.textual.app.MarkdownSourceStorage")
+@patch("aisignal.ui.textual.app.ParsedItemStorage")
+@patch("aisignal.ui.textual.app.ContentService")
+@patch("aisignal.ui.textual.app.ExportManager")
 def test_content_curator_app_initialization(
     mock_export_manager,
     mock_content_service,
@@ -61,7 +61,7 @@ def test_notify_user():
     app.notify.assert_called_with("Test message")
 
 
-@patch("aisignal.interfaces.textual.app.ContentCuratorApp.log", new_callable=Mock)
+@patch("aisignal.ui.textual.app.ContentCuratorApp.log", new_callable=Mock)
 def test_handle_error(mock_log):
     app = ContentCuratorApp()
     app.notify_user = Mock()

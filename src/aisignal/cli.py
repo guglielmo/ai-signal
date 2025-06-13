@@ -9,7 +9,7 @@ from rich.console import Console
 
 from aisignal.core.config_schema import AppConfiguration
 
-from .interfaces.textual.app import ContentCuratorApp
+from .ui.textual.app import ContentCuratorApp
 
 console = Console()
 app = typer.Typer(
@@ -52,7 +52,7 @@ def get_version() -> str:
     :return: The version string of the project.
     :rtype: str
     """
-    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
     pyproject = toml.load(pyproject_path)
     return pyproject["tool"]["poetry"]["version"]
 
