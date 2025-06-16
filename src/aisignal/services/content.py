@@ -6,6 +6,7 @@ import aiohttp
 import openai
 from textual import log
 
+from aisignal.core.services.storage_service import StorageService
 from aisignal.core.sync_exceptions import (
     APIError,
     ContentAnalysisError,
@@ -13,7 +14,6 @@ from aisignal.core.sync_exceptions import (
 )
 from aisignal.core.sync_status import SyncProgress, SyncStatus
 from aisignal.core.token_tracker import COST_PER_MILLION, TokenTracker
-from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
 
 class ContentService:
@@ -43,8 +43,7 @@ class ContentService:
         jina_api_key: str,
         openai_api_key: str,
         categories: List[str],
-        markdown_storage: MarkdownSourceStorage,
-        item_storage: ParsedItemStorage,
+        storage_service: StorageService,
         token_tracker: TokenTracker,
         min_threshold: float,  # New parameter
         max_threshold: float,  # New parameter
@@ -73,8 +72,7 @@ class ContentService:
         self.jina_api_key = jina_api_key
         self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
         self.categories = categories
-        self.markdown_storage = markdown_storage
-        self.item_storage = item_storage
+        self.storage_service = storage_service
         self.token_tracker = token_tracker
         self.min_threshold = min_threshold
         self.max_threshold = max_threshold
@@ -147,13 +145,13 @@ class ContentService:
                     title = self._extract_title(new_content)
 
                     # Get diff from storage
-                    content_diff = self.markdown_storage.get_content_diff(
+                    content_diff = self.storage_service.get_content_diff(
                         url, new_content
                     )
                     # Store new content if there are changes
 
                     if content_diff.has_changes:
-                        self.markdown_storage.store_content(url, new_content)
+                        self.storage_service._store_content(url, new_content)
 
                     return {
                         "url": url,
@@ -403,12 +401,12 @@ class ContentService:
                     self.sync_progress.update_progress(source_url, len(items))
 
                     # Handle new items
-                    new_items = self.item_storage.filter_new_items(source_url, items)
+                    new_items = self.storage_service.filter_new_items(source_url, items)
 
                     if new_items:
-                        self.item_storage.store_items(source_url, new_items)
+                        self.storage_service._store_items(source_url, new_items)
                         log.info(f"Stored {len(new_items)} new items for {source_url}")
-                        results[source_url] = self.item_storage.get_stored_items(
+                        results[source_url] = self.storage_service.get_stored_items(
                             source_url
                         )
                         # Update completion status

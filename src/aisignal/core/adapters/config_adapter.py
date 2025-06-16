@@ -7,8 +7,8 @@ interface without modifying the original implementation.
 
 from typing import List
 
-from aisignal.core.config import ConfigManager
 from aisignal.core.interfaces import IConfigManager
+from aisignal.core.services import ConfigService
 
 
 class ConfigManagerAdapter(IConfigManager):
@@ -19,7 +19,7 @@ class ConfigManagerAdapter(IConfigManager):
     with the new Core architecture without modifying the original class.
     """
 
-    def __init__(self, config_manager: ConfigManager):
+    def __init__(self, config_manager: ConfigService):
         """
         Initialize adapter with existing ConfigManager instance.
 
@@ -91,7 +91,7 @@ class ConfigManagerAdapter(IConfigManager):
 
 
 # Factory function to create adapter from existing ConfigManager
-def create_config_adapter(config_manager: ConfigManager = None) -> IConfigManager:
+def create_config_adapter(config_manager: ConfigService = None) -> IConfigManager:
     """
     Factory function to create ConfigManagerAdapter.
 
@@ -102,6 +102,6 @@ def create_config_adapter(config_manager: ConfigManager = None) -> IConfigManage
         IConfigManager implementation (ConfigManagerAdapter)
     """
     if config_manager is None:
-        config_manager = ConfigManager()
+        config_manager = ConfigService()
 
     return ConfigManagerAdapter(config_manager)

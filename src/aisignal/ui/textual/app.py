@@ -4,13 +4,13 @@ from typing import Iterable, Optional
 from textual.app import App, SystemCommand
 from textual.screen import Screen
 
-from aisignal.core.config import ConfigManager
 from aisignal.core.export import ExportManager
 from aisignal.core.filters import ResourceFilterState
 from aisignal.core.resource_manager import ResourceManager
+from aisignal.core.services.config_service import ConfigService
+from aisignal.core.services.storage_service import StorageService
 from aisignal.core.token_tracker import TokenTracker
 from aisignal.services.content import ContentService
-from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 from aisignal.ui.textual.screens.main import MainScreen
 from aisignal.ui.textual.screens.modals.token_usage_modal import TokenUsageModal
 
@@ -46,19 +46,17 @@ class ContentCuratorApp(App):
         super().__init__()
 
         try:
-            self.config_manager = ConfigManager(config_path)
+            self.config_manager = ConfigService(config_path)
             self.filter_state = ResourceFilterState(self.on_filter_change)
             self.resource_manager = ResourceManager()
-            self.markdown_storage = MarkdownSourceStorage()
-            self.item_storage = ParsedItemStorage()
+            self.storage_service = StorageService()
             self.token_tracker = TokenTracker()
             self.is_syncing = False
             self.content_service = ContentService(
                 jina_api_key=self.config_manager.jina_api_key,
                 openai_api_key=self.config_manager.openai_api_key,
                 categories=self.config_manager.categories,
-                markdown_storage=self.markdown_storage,
-                item_storage=self.item_storage,
+                storage_service=self.storage_service,
                 token_tracker=self.token_tracker,
                 min_threshold=self.config_manager.min_threshold,
                 max_threshold=self.config_manager.max_threshold,

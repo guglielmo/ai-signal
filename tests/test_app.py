@@ -5,18 +5,16 @@ from unittest.mock import Mock, patch
 from aisignal.ui.textual.app import ContentCuratorApp
 
 
-@patch("aisignal.ui.textual.app.ConfigManager")
+@patch("aisignal.ui.textual.app.ConfigService")
 @patch("aisignal.ui.textual.app.ResourceFilterState")
 @patch("aisignal.ui.textual.app.ResourceManager")
-@patch("aisignal.ui.textual.app.MarkdownSourceStorage")
-@patch("aisignal.ui.textual.app.ParsedItemStorage")
+@patch("aisignal.ui.textual.app.StorageService")
 @patch("aisignal.ui.textual.app.ContentService")
 @patch("aisignal.ui.textual.app.ExportManager")
 def test_content_curator_app_initialization(
     mock_export_manager,
     mock_content_service,
-    mock_parsed_item_storage,
-    mock_markdown_storage,
+    mock_storage_service,
     mock_resource_manager,
     mock_filter_state,
     mock_config_manager,
@@ -35,14 +33,12 @@ def test_content_curator_app_initialization(
     mock_config_manager.assert_called_once_with(None)
     mock_filter_state.assert_called_once()
     mock_resource_manager.assert_called_once()
-    mock_markdown_storage.assert_called_once()
-    mock_parsed_item_storage.assert_called_once()
+    mock_storage_service.assert_called_once()
     mock_content_service.assert_called_once_with(
         jina_api_key="dummy_key",
         openai_api_key="dummy_key",
         categories=["cat1", "cat2"],
-        markdown_storage=app.markdown_storage,
-        item_storage=app.item_storage,
+        storage_service=app.storage_service,
         token_tracker=app.token_tracker,
         min_threshold=app.config_manager.min_threshold,
         max_threshold=app.config_manager.max_threshold,
