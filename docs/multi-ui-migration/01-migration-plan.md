@@ -76,15 +76,15 @@ Each step adds **only** what's needed for the next step, following YAGNI and KIS
 **Goal**: Create `IStorageService` that wraps existing storage classes
 
 **Tasks**:
-- [ ] Implement `StorageService` that unifies `MarkdownSourceStorage` + `ParsedItemStorage`
-- [ ] Keep existing database schema unchanged
-- [ ] Add basic error handling with `OperationResult` pattern
-- [ ] Create unit tests with mock database
+- [x] Implement `StorageService` that unifies `MarkdownSourceStorage` + `ParsedItemStorage`
+- [x] Keep existing database schema unchanged
+- [x] Add basic error handling with `OperationResult` pattern
+- [x] Create unit tests with mock database
 
 **Deliverables**:
-- [ ] `src/aisignal/core/services/storage_service.py`
-- [ ] Unit tests for storage operations
-- [ ] No schema changes, only abstraction layer
+- [x] `src/aisignal/core/services/storage_service.py`
+- [x] Unit tests for storage operations
+- [x] No schema changes, only abstraction layer
 
 ### Tuesday-Thursday (6 hours total): Config & Content Services
 **Daily tasks**:

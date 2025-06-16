@@ -120,21 +120,22 @@ def validate():
 
     try:
         with open(CONFIG_FILE) as f:
-            config = yaml.safe_load(f)
+            _config = yaml.safe_load(f)
 
         # Add validation logic here
         required_fields = [
             "sources",
             "prompts",
             "categories",
-            "quality_threshold",
+            "min_quality_threshold",
+            "max_quality_threshold",
             "sync_interval",
             "api_keys",
             "obsidian",
             "social",
         ]
         for field in required_fields:
-            if field not in config:
+            if field not in _config:
                 raise ValueError(f"Missing required field: {field}")
 
         console.print("[green]Configuration is valid![/]")
@@ -159,8 +160,8 @@ def sync():
         console.print("[red]Config file not found. Run 'aisignal init' first.[/]")
         raise typer.Exit(1)
 
-    app = ContentCuratorApp()
-    app.action_sync()
+    _app = ContentCuratorApp()
+    _app.action_sync()
     console.print("[green]Sync completed![/]")
 
 
@@ -206,8 +207,8 @@ def run(
     else:
         ensure_config()
 
-    app = ContentCuratorApp()
-    app.run()
+    _app = ContentCuratorApp()
+    _app.run()
 
 
 def main():

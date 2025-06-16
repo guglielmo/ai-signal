@@ -144,12 +144,7 @@ class ContentCuratorApp(App):
         """
         self.log("Filters updated, refreshing view")
 
-        # Find the main screen and update its resource list
-        main_screen = next(
-            (s for s in self.screen_stack if isinstance(s, MainScreen)), None
-        )
-        if main_screen:
-            main_screen.update_resource_list()
+        self.update_main_screen()
 
 
 def run_app(config_path: Optional[Path] = None):

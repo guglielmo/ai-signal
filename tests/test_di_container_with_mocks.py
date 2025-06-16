@@ -449,7 +449,7 @@ class TestWeek1FridayDeliverables:
         from pathlib import Path
 
         # Verify roadmap documentation exists
-        docs_path = Path("docs/multi-ui-migration")
+        docs_path = Path("./docs/multi-ui-migration")
         migration_plan = docs_path / "01-migration-plan.md"
         migration_utils = docs_path / "migration-utilities.md"
 
