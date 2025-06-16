@@ -178,7 +178,7 @@ class ResourceDetailScreen(BaseScreen):
             if content:
                 self.resource.full_content = content
                 # Update in database
-                self.app.item_storage.update_full_content(self.resource.id, content)
+                self.app.storage_service.update_full_content(self.resource.id, content)
 
                 # Remove all existing widgets
                 await loading.remove()
@@ -237,7 +237,7 @@ class ResourceDetailScreen(BaseScreen):
 
     def action_delete(self) -> None:
         """Mark resource as removed."""
-        self.app.item_storage.mark_as_removed(self.resource.id)
+        self.app.storage_service.mark_as_removed(self.resource.id)
         self.app.resource_manager.remove_resource(self.resource.id)
         self.app.notify(f"Removed resource: {self.resource.title}")
         self.app.update_main_screen()

@@ -120,7 +120,7 @@ class MainScreen(BaseScreen):
 
         :return: None
         """
-        storage = self.app.item_storage  # Assuming this exists
+        storage = self.app.storage_service  # Assuming this exists
         resources = []
 
         for source in self.app.config_manager.sources:
@@ -262,7 +262,7 @@ class MainScreen(BaseScreen):
             current_position = table.get_row_index(row_key)
             resource = self.app.resource_manager[row_key]
             # Mark as removed in storage and manager
-            self.app.item_storage.mark_as_removed(resource.id)
+            self.app.storage_service.mark_as_removed(resource.id)
             self.app.resource_manager.remove_resource(resource.id)
 
             # Update the UI
