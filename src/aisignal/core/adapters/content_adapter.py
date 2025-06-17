@@ -8,7 +8,7 @@ interface without modifying the original implementation.
 from typing import Dict, List, Optional, Union
 
 from aisignal.core.interfaces import IContentService
-from aisignal.services.content import ContentService
+from aisignal.core.services.content_service import ContentService
 
 
 class ContentServiceAdapter(IContentService):
@@ -84,8 +84,7 @@ def create_content_adapter(
     jina_api_key: str,
     openai_api_key: str,
     categories: List[str],
-    markdown_storage,
-    item_storage,
+    storage_service,
     token_tracker,
     min_threshold: float,
     max_threshold: float,
@@ -98,8 +97,7 @@ def create_content_adapter(
         jina_api_key: Jina AI API key
         openai_api_key: OpenAI API key
         categories: List of categories
-        markdown_storage: Markdown storage instance
-        item_storage: Item storage instance
+        storage_service: Storage service instance
         token_tracker: Token tracker instance
         min_threshold: Minimum threshold for content filtering
         max_threshold: Maximum threshold for content filtering
@@ -113,8 +111,7 @@ def create_content_adapter(
             jina_api_key=jina_api_key,
             openai_api_key=openai_api_key,
             categories=categories,
-            markdown_storage=markdown_storage,
-            item_storage=item_storage,
+            storage_service=storage_service,
             token_tracker=token_tracker,
             min_threshold=min_threshold,
             max_threshold=max_threshold,

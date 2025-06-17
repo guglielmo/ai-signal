@@ -567,6 +567,26 @@ def test_helpers():
 
 
 @pytest.fixture
+def temp_db():
+    """Create a temporary database for testing."""
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    yield db_path
+    Path(db_path).unlink(missing_ok=True)
+
+
+@pytest.fixture
+def real_storage_service(temp_db):
+    """Create a real StorageService instance for testing"""
+    from aisignal.core.services.storage_service import StorageService
+
+    return StorageService(temp_db)
+
+
+@pytest.fixture
 def temp_storage_path(tmp_path):
     """Provide a temporary path for storage testing"""
     storage_dir = tmp_path / "test_storage"

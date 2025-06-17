@@ -31,7 +31,7 @@ class MigrationAnalyzer:
         self.legacy_classes = {
             "ConfigManager": "aisignal.core.config",
             "ResourceManager": "aisignal.core.resource_manager",
-            "ContentService": "aisignal.services.content",
+            "ContentService": "aisignal.core.services.content_service",
         }
 
     def scan_legacy_dependencies(self) -> Dict[str, List[str]]:

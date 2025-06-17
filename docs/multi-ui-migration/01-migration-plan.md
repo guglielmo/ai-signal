@@ -73,7 +73,7 @@ Each step adds **only** what's needed for the next step, following YAGNI and KIS
 **Objective**: Implement core services that wrap existing functionality
 
 ### Monday (4-6 hours): Storage Service
-**Goal**: Create `IStorageService` that wraps existing storage classes
+**Goal**: Create `IStorageService` extension that contains existing storage classes behaviour
 
 **Tasks**:
 - [x] Implement `StorageService` that unifies `MarkdownSourceStorage` + `ParsedItemStorage`
@@ -88,13 +88,13 @@ Each step adds **only** what's needed for the next step, following YAGNI and KIS
 
 ### Tuesday-Thursday (6 hours total): Config & Content Services
 **Daily tasks**:
-- [x] Day 1: Implement `ConfigService` wrapping existing `ConfigManager`
-- [ ] Day 2: Implement `ContentService` wrapping existing content operations  
+- [x] Day 1: Implement `ConfigService` moving existing `ConfigManager`
+- [x] Day 2: Implement `ContentService` moving existing content operations  
 - [ ] Day 3: Integration testing and error handling refinement
 
 **Deliverables**:
-- [ ] `src/aisignal/core/services/config_service.py`
-- [ ] `src/aisignal/core/services/content_service.py`
+- [x] `src/aisignal/core/services/config_service.py`
+- [x] `src/aisignal/core/services/content_service.py`
 - [ ] Comprehensive unit test suite
 
 ### Friday (4-6 hours): Service Integration

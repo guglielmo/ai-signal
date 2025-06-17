@@ -8,9 +8,9 @@ from aisignal.core.export import ExportManager
 from aisignal.core.filters import ResourceFilterState
 from aisignal.core.resource_manager import ResourceManager
 from aisignal.core.services.config_service import ConfigService
+from aisignal.core.services.content_service import ContentService
 from aisignal.core.services.storage_service import StorageService
 from aisignal.core.token_tracker import TokenTracker
-from aisignal.services.content import ContentService
 from aisignal.ui.textual.screens.main import MainScreen
 from aisignal.ui.textual.screens.modals.token_usage_modal import TokenUsageModal
 
