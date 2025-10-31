@@ -1,0 +1,112 @@
+================================================================================
+AI SIGNAL - GITHUB ISSUES ANALYSIS
+================================================================================
+
+OVERALL STATISTICS
+--------------------------------------------------------------------------------
+Total Issues: 21
+Open Issues: 16 (76.2%)
+Closed Issues: 5 (23.8%)
+
+TIME DISTRIBUTION
+--------------------------------------------------------------------------------
+
+Issues Created/Closed by Month:
+  2024-11: Created= 2, Closed= 0
+  2024-12: Created=10, Closed= 5
+  2025-10: Created= 9, Closed= 0
+
+Most Recent Issues:
+  #21 - Add integration tests with real RSS feeds          (2025-10-31)
+  #20 - Add unit tests for RSS functionality               (2025-10-31)
+  #19 - Add feed metadata storage and tracking             (2025-10-31)
+  #18 - Implement HTML feed auto-discovery                 (2025-10-31)
+  #17 - Add routing logic to detect and handle RSS feeds   (2025-10-31)
+
+Open Issues Age Analysis:
+  Oldest: 333 days
+  Newest: 0 days
+  Average: 144.6 days
+
+MILESTONE ANALYSIS
+--------------------------------------------------------------------------------
+Issues with Milestone: 9 (42.9%)
+Issues without Milestone: 12 (57.1%)
+
+Milestone Details:
+
+  RSS Integration (Due: 2025-12-01T08:00:00Z)
+    Description: Implement RSS/Atom feed support with auto-discovery, parsing, and test
+    Open: 9, Closed: 0
+    Issues:
+      ○ #13 - Update documentation for RSS support
+      ○ #14 - Add RSS parsing dependencies
+      ○ #15 - Create RSS feed detection utility
+      ○ #16 - Implement RSS feed parsing and markdown conversion
+      ○ #17 - Add routing logic to detect and handle RSS feeds
+      ○ #18 - Implement HTML feed auto-discovery
+      ○ #19 - Add feed metadata storage and tracking
+      ○ #20 - Add unit tests for RSS functionality
+      ○ #21 - Add integration tests with real RSS feeds
+
+LABEL ANALYSIS
+--------------------------------------------------------------------------------
+Label Distribution:
+  enhancement         : 11 issues
+  documentation       :  1 issues
+
+THEMATIC ANALYSIS
+--------------------------------------------------------------------------------
+Open Issues by Theme:
+
+  RSS/Feed Integration (11 issues):
+    # 3 - LLM requests optimization
+    # 6 - Feedback loop
+    #13 - Update documentation for RSS support
+    #14 - Add RSS parsing dependencies
+    #15 - Create RSS feed detection utility
+    #16 - Implement RSS feed parsing and markdown conversion
+    #17 - Add routing logic to detect and handle RSS feeds
+    #18 - Implement HTML feed auto-discovery
+    #19 - Add feed metadata storage and tracking
+    #20 - Add unit tests for RSS functionality
+    #21 - Add integration tests with real RSS feeds
+
+  UI/UX Improvements (3 issues):
+    # 4 - Categories and Sources Statistics
+    # 7 - Summarize, or extract_wisdom
+    #11 - Add and show notes for Resources
+
+  Configuration (1 issues):
+    #12 - Set LLM engine in a configuration option
+
+  Content Management (1 issues):
+    # 5 - Youtube videos resources
+
+ASSIGNMENT ANALYSIS
+--------------------------------------------------------------------------------
+Open Issues - Assigned: 7, Unassigned: 9
+
+Unassigned Open Issues:
+  #13 - Update documentation for RSS support
+  #14 - Add RSS parsing dependencies
+  #15 - Create RSS feed detection utility
+  #16 - Implement RSS feed parsing and markdown conversion
+  #17 - Add routing logic to detect and handle RSS feeds
+  #18 - Implement HTML feed auto-discovery
+  #19 - Add feed metadata storage and tracking
+  #20 - Add unit tests for RSS functionality
+  #21 - Add integration tests with real RSS feeds
+
+DEPENDENCY ANALYSIS
+--------------------------------------------------------------------------------
+Issues with Dependencies (8):
+  #13 - Update documentation for RSS support
+  #15 - Create RSS feed detection utility
+  #16 - Implement RSS feed parsing and markdown conversion
+  #17 - Add routing logic to detect and handle RSS feeds
+  #18 - Implement HTML feed auto-discovery
+  #19 - Add feed metadata storage and tracking
+  #20 - Add unit tests for RSS functionality
+  #21 - Add integration tests with real RSS feeds
+
