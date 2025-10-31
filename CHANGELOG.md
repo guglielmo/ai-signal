@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-10-31
+
+### Added
+- Core architecture layer with ABC interfaces (IStorageService, IConfigService, IContentService)
+- Advanced dependency injection container with singleton, transient, and scoped service lifetimes
+- Comprehensive test suite (140 tests covering unit, integration, and error recovery scenarios)
+- CLAUDE.md with architectural guidance for Claude Code
+- VISION.md with product vision and strategic roadmap
+- Migration documentation and architecture decisions
+- Project analysis documents
+- Mock services for testing
+- Adapter pattern implementations for external dependencies
+- User ID support in models for future multi-user capability
+
+### Changed
+- Restructured UI layer from `src/aisignal/` to `src/aisignal/ui/textual/` for multi-interface support
+- Refactored ConfigService from core/config.py to core/services/config_service.py
+- Refactored ContentService to implement IContentService interface
+- Moved storage logic to unified StorageService in core/services/storage_service.py
+- Updated README with current project status and enhanced roadmap
+- Improved error handling with OperationResult pattern in core services
+
+### Removed
+- Legacy storage.py (420 lines) - replaced by storage_service.py with cleaner interface
+- CLAUDE.md from .gitignore (now tracked in repository)
+
+### Technical
+- Completed Week 1-2 of 5-week architecture migration plan
+- All existing functionality preserved with backward compatibility
+- Foundation ready for Web API, Mobile, and MCP Server interfaces
+
 ## [0.8.1] - 2025-06-06
 
 ### Added
