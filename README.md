@@ -100,9 +100,30 @@ aisignal run
 
 ## Project Status
 
-This project is in its early development stages. 
-I am not yet ready to provide a working prototype. As an open source initiative, I welcome contributors 
-who can help advance the project. Please read the [Contributing Guide](CONTRIBUTING.md)
+**Current Version:** 0.8.1 (Alpha)
+**Status:** Active Development - RSS Integration Phase
+
+AI Signal is a working prototype with core curation features implemented. The project is currently focused on adding native RSS/Atom feed support to reduce costs and improve performance.
+
+**What Works:**
+- ✅ Content fetching and analysis with AI (Jina AI + OpenAI)
+- ✅ Customizable categories and quality thresholds
+- ✅ Dual-threshold filtering system
+- ✅ Terminal UI with keyboard-driven interface
+- ✅ Export to Obsidian
+- ✅ Token usage tracking and cost visibility
+
+**In Development:**
+- 🚧 RSS/Atom feed parsing (Issues #14-21)
+- 🚧 Feed auto-discovery
+- 🚧 Comprehensive test suite
+
+**Coming Soon:**
+- 📋 Resource notes and annotations
+- 📊 Statistics dashboard
+- 🤖 Multi-LLM support
+
+As an open source initiative, contributors are welcome! See the [Contributing Guide](docs/CONTRIBUTING.md) and [VISION.md](VISION.md) for strategic direction.
 
 
 ### Development environment setup
@@ -131,30 +152,66 @@ aisignal version
 
 
 ## Roadmap
-- [ ] Add support for more content sources (YT videos, podcasts, pdf)
-- [ ] Add statistics on most used sources and categories 
-  - which are the sources most interesting news come from?
-  - which are the categories with most news
-  - which are the trends
-- [ ] Implement a double thresholds mechanism
-  - all below minimal threshold is not even added to the datatable
-  - all below maximum threshold is accepted as _interesting_
-  - all in between must be further evaluated, by you, with your keyboard
-    - y - accept
-    - n - refuse
-- [ ] Implement feedback loop, based on your selections
-  - suggest other interests that you may have
-  - highlight waning interests
-- [ ] Implement custom AI models (Anthropic, Ollama, Gemini, ...)
-- [ ] Add content archiving
-  - read/unread items, filter by read/unread status
-  - remove items
-- [ ] Enable custom prompts for sources
-- [ ] Enable custom filtering rules
+
+See [VISION.md](VISION.md) for complete product vision and strategic direction.
+
+### Current Focus: RSS Integration (Q4 2025)
+
+Native RSS/Atom feed support to dramatically reduce costs and improve performance:
+
+- [ ] **RSS Feed Parsing** - Direct parsing of RSS/Atom feeds (no API costs)
+- [ ] **Auto-Discovery** - Automatically find feeds from blog URLs
+- [ ] **Feed Metadata** - Track feed type, entry count, last update
+- [ ] **Hybrid Approach** - RSS for feeds, Jina AI fallback for HTML pages
+- [ ] **Comprehensive Testing** - Unit and integration tests with real feeds
+
+**Why RSS First:** Reduces content fetching costs by 50-80% and improves performance 10-100×, enabling affordable AI features downstream.
+
+**Status:** Milestone defined with 9 issues (#14-21). Estimated 16 hours implementation. [See detailed plan →](https://github.com/guglielmo/ai-signal/milestone/1)
+
+### Phase 2: Core UX Improvements (Q1 2026)
+
+- [ ] **Resource Notes** - Add personal notes and annotations to saved items
+- [ ] **Statistics Dashboard** - Which sources and categories are most valuable?
+- [ ] **Better Sorting** - Enhanced sort options (recency, category, source)
+- [ ] **UI Polish** - Refinements based on real usage patterns
+
+### Phase 3: AI Intelligence Features (Q2 2026)
+
+- [ ] **Content Summarization** - Generate summaries and key takeaways
+- [ ] **Wisdom Extraction** - Pull out actionable insights from content
+- [ ] **Multi-LLM Support** - Choose from OpenAI, Claude, Gemini, or local models
+- [ ] **Batch Optimization** - Efficient grouping of source analysis
+
+### Phase 4: Learning & Personalization (Q3 2026+)
+
+- [ ] **Feedback Loop** - Learn from your reading patterns and choices
+- [ ] **Category Suggestions** - Discover new interests based on behavior
+- [ ] **Source Recommendations** - Find relevant blogs and feeds
+- [ ] **YouTube Videos** - Transcribe and analyze video content
+- [ ] **Content Archiving** - Read/unread status, filtering, search
+
+### Future Considerations
+
+- [ ] Multi-user and team features
+- [ ] Public curations and sharing
+- [ ] Podcast and audio content support
+- [ ] Browser extension for saving pages
+- [ ] Mobile companion app
+
+**Note:** The roadmap is intentionally sequenced - RSS integration enables cost-effective AI features, which in turn make learning features viable. See [technical analysis](docs/analysis-2025-10/ai_signal_tech_assessment.md) for detailed rationale.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Documentation
+
+- **[VISION.md](VISION.md)** - Product vision and strategic direction
+- **[Configuration Guide](docs/configuration.md)** - How to configure AI Signal
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute
+- **[Technical Specification](docs/technical_specification.md)** - Architecture details
+- **[Project Analysis](docs/analysis-2025-10/)** - Comprehensive analysis and roadmap rationale
 
 ## Acknowledgments
 

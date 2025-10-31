@@ -6,7 +6,7 @@ from textual.screen import Screen
 from textual.widgets import Footer, Header
 
 if TYPE_CHECKING:
-    from aisignal.app import ContentCuratorApp
+    from aisignal.ui.textual.app import ContentCuratorApp
 
 
 class BaseScreen(Screen):

@@ -2,21 +2,19 @@
 
 from unittest.mock import Mock, patch
 
-from aisignal.app import ContentCuratorApp
+from aisignal.ui.textual.app import ContentCuratorApp
 
 
-@patch("aisignal.app.ConfigManager")
-@patch("aisignal.app.ResourceFilterState")
-@patch("aisignal.app.ResourceManager")
-@patch("aisignal.app.MarkdownSourceStorage")
-@patch("aisignal.app.ParsedItemStorage")
-@patch("aisignal.app.ContentService")
-@patch("aisignal.app.ExportManager")
+@patch("aisignal.ui.textual.app.ConfigService")
+@patch("aisignal.ui.textual.app.ResourceFilterState")
+@patch("aisignal.ui.textual.app.ResourceManager")
+@patch("aisignal.ui.textual.app.StorageService")
+@patch("aisignal.ui.textual.app.ContentService")
+@patch("aisignal.ui.textual.app.ExportManager")
 def test_content_curator_app_initialization(
     mock_export_manager,
     mock_content_service,
-    mock_parsed_item_storage,
-    mock_markdown_storage,
+    mock_storage_service,
     mock_resource_manager,
     mock_filter_state,
     mock_config_manager,
@@ -35,14 +33,15 @@ def test_content_curator_app_initialization(
     mock_config_manager.assert_called_once_with(None)
     mock_filter_state.assert_called_once()
     mock_resource_manager.assert_called_once()
-    mock_markdown_storage.assert_called_once()
-    mock_parsed_item_storage.assert_called_once()
+    mock_storage_service.assert_called_once()
     mock_content_service.assert_called_once_with(
         jina_api_key="dummy_key",
         openai_api_key="dummy_key",
         categories=["cat1", "cat2"],
-        markdown_storage=app.markdown_storage,
-        item_storage=app.item_storage,
+        storage_service=app.storage_service,
+        token_tracker=app.token_tracker,
+        min_threshold=app.config_manager.min_threshold,
+        max_threshold=app.config_manager.max_threshold,
     )
     mock_export_manager.assert_called_once_with("/path/to/vault", "/path/to/template")
 
@@ -58,7 +57,7 @@ def test_notify_user():
     app.notify.assert_called_with("Test message")
 
 
-@patch("aisignal.app.ContentCuratorApp.log", new_callable=Mock)
+@patch("aisignal.ui.textual.app.ContentCuratorApp.log", new_callable=Mock)
 def test_handle_error(mock_log):
     app = ContentCuratorApp()
     app.notify_user = Mock()

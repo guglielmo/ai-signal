@@ -10,10 +10,10 @@ from textual.widgets import DataTable, Label, ListItem, ListView
 
 from aisignal.core.models import Resource
 from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
-from aisignal.screens import BaseScreen
-from aisignal.screens.config import ConfigScreen
-from aisignal.screens.modals.sync_status_modal import SyncStatusModal
-from aisignal.screens.resource.detail import ResourceDetailScreen
+from aisignal.ui.textual.screens.base import BaseScreen
+from aisignal.ui.textual.screens.config import ConfigScreen
+from aisignal.ui.textual.screens.modals.sync_status_modal import SyncStatusModal
+from aisignal.ui.textual.screens.resource.detail import ResourceDetailScreen
 
 
 class MainScreen(BaseScreen):
@@ -120,7 +120,7 @@ class MainScreen(BaseScreen):
 
         :return: None
         """
-        storage = self.app.item_storage  # Assuming this exists
+        storage = self.app.storage_service  # Assuming this exists
         resources = []
 
         for source in self.app.config_manager.sources:
@@ -129,6 +129,7 @@ class MainScreen(BaseScreen):
                 try:
                     resource = Resource(
                         id=item["id"],
+                        user_id="default_user",
                         title=item["title"],
                         url=item["link"],
                         categories=item["categories"],
@@ -261,7 +262,7 @@ class MainScreen(BaseScreen):
             current_position = table.get_row_index(row_key)
             resource = self.app.resource_manager[row_key]
             # Mark as removed in storage and manager
-            self.app.item_storage.mark_as_removed(resource.id)
+            self.app.storage_service.mark_as_removed(resource.id)
             self.app.resource_manager.remove_resource(resource.id)
 
             # Update the UI
@@ -360,6 +361,7 @@ class MainScreen(BaseScreen):
                         try:
                             resource = Resource(
                                 id=str(len(new_resources)),
+                                user_id="default_user",
                                 title=item["title"],
                                 url=item["link"],
                                 categories=item["categories"],

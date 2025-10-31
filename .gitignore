@@ -163,6 +163,5 @@ cython_debug/
 .idea/
 
 storage.db
-CLAUDE.md
 /.claude/
 /docs/ai-notes/

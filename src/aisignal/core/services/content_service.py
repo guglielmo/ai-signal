@@ -6,6 +6,8 @@ import aiohttp
 import openai
 from textual import log
 
+from aisignal.core.interfaces import IContentService
+from aisignal.core.services.storage_service import StorageService
 from aisignal.core.sync_exceptions import (
     APIError,
     ContentAnalysisError,
@@ -13,29 +15,15 @@ from aisignal.core.sync_exceptions import (
 )
 from aisignal.core.sync_status import SyncProgress, SyncStatus
 from aisignal.core.token_tracker import COST_PER_MILLION, TokenTracker
-from aisignal.services.storage import MarkdownSourceStorage, ParsedItemStorage
 
 
-class ContentService:
+class ContentService(IContentService):
     """
     ContentService class provides methods for fetching content from a URL using
     Jina AI Reader and analyzing it with OpenAI.
 
-    __init__(self, jina_api_key: str, openai_api_key: str, categories: List[str]):
-        Initialize ContentService with Jina API key, OpenAI API key,
-        and a list of categories.
-
-    fetch_content(self, url: str) -> Optional[Dict]:
-        Fetch content from URL using Jina AI Reader.
-
-    _extract_title(markdown: str) -> str:
-        Extract title from markdown content.
-
-    analyze_content(self, content: str, prompt_template: str) -> List[Dict]:
-        Analyze content using OpenAI API.
-
-    _parse_markdown_items(self, markdown_text: str) -> List[Dict]:
-        Parse markdown formatted items into structured data.
+    This class implements the IContentService interface and provides comprehensive
+    content fetching, analysis, and storage capabilities.
     """
 
     def __init__(
@@ -43,11 +31,10 @@ class ContentService:
         jina_api_key: str,
         openai_api_key: str,
         categories: List[str],
-        markdown_storage: MarkdownSourceStorage,
-        item_storage: ParsedItemStorage,
+        storage_service: StorageService,
         token_tracker: TokenTracker,
-        min_threshold: float,  # New parameter
-        max_threshold: float,  # New parameter
+        min_threshold: float,
+        max_threshold: float,
     ):
         """
         Initializes the class with the necessary API keys, category list,
@@ -59,10 +46,8 @@ class ContentService:
           The API key needed to connect to OpenAI services for API operations.
         :param categories:
           A list of categories used for classifying or organizing data.
-        :param markdown_storage:
-          An instance of MarkdownSourceStorage for handling markdown data.
-        :param item_storage:
-          An instance of ParsedItemStorage for managing parsed items.
+        :param storage_service:
+          An instance of StorageService for handling data storage operations.
         :param token_tracker:
           A TokenTracker instance used to track or manage API token usage.
         :param min_threshold:
@@ -73,8 +58,7 @@ class ContentService:
         self.jina_api_key = jina_api_key
         self.openai_client = openai.AsyncOpenAI(api_key=openai_api_key)
         self.categories = categories
-        self.markdown_storage = markdown_storage
-        self.item_storage = item_storage
+        self.storage_service = storage_service
         self.token_tracker = token_tracker
         self.min_threshold = min_threshold
         self.max_threshold = max_threshold
@@ -147,13 +131,13 @@ class ContentService:
                     title = self._extract_title(new_content)
 
                     # Get diff from storage
-                    content_diff = self.markdown_storage.get_content_diff(
+                    content_diff = self.storage_service.get_content_diff(
                         url, new_content
                     )
                     # Store new content if there are changes
 
                     if content_diff.has_changes:
-                        self.markdown_storage.store_content(url, new_content)
+                        self.storage_service._store_content(url, new_content)
 
                     return {
                         "url": url,
@@ -165,8 +149,6 @@ class ContentService:
             raise ContentFetchError(url, str(e))
         except Exception as e:
             raise ContentFetchError(url, f"Unexpected error: {str(e)}")
-
-    # In content.py, add to ContentService class
 
     async def fetch_full_content(self, url: str) -> Optional[str]:
         """
@@ -309,13 +291,17 @@ class ContentService:
         Returns:
             Dictionary mapping URLs to their analyzed and processed items
         """
-        # Step 1: Get AI analysis
-        ai_response = await self._get_ai_analysis(
-            batch_content, prompt_template, categories_list
-        )
+        try:
+            # Step 1: Get AI analysis
+            ai_response = await self._get_ai_analysis(
+                batch_content, prompt_template, categories_list
+            )
 
-        # Step 2: Process AI response for each URL
-        return await self._process_urls_items(ai_response)
+            # Step 2: Process AI response for each URL
+            return await self._process_urls_items(ai_response)
+        except ContentAnalysisError as e:
+            # Re-raise with multiple sources context since we're processing a batch
+            raise ContentAnalysisError("multiple sources", str(e))
 
     async def _get_ai_analysis(
         self, content: str, prompt_template: str, categories_list: str
@@ -329,22 +315,26 @@ class ContentService:
             f"Categories\n==========\n{categories_list}\n\n"
             f"Content\n=======\n{content}\n"
         )
-        # log.debug(f"PROMPT\n\n{full_prompt}\n")
         log.info("Prompt sent to LLM")
 
-        # Get AI response
-        response = await self.openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": full_prompt}],
-            temperature=0.7,
-        )
+        try:
+            # Get AI response
+            response = await self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": full_prompt}],
+                temperature=0.7,
+            )
 
-        # Track token usage
-        self._track_token_usage(response.usage)
+            # Track token usage
+            self._track_token_usage(response.usage)
 
-        returned_content = response.choices[0].message.content
-        log.debug(f"Content returned from LLM:\n {returned_content}")
-        return returned_content
+            returned_content = response.choices[0].message.content
+            log.debug(f"Content returned from LLM:\n {returned_content}")
+            return returned_content
+        except Exception as e:
+            # For OpenAI errors, we need to wrap them in ContentAnalysisError
+            # Since we're analyzing content from multiple URLs, we'll use a generic URL
+            raise ContentAnalysisError("batch_content", str(e))
 
     def _track_token_usage(self, usage):
         """Track and log token usage and costs."""
@@ -403,12 +393,12 @@ class ContentService:
                     self.sync_progress.update_progress(source_url, len(items))
 
                     # Handle new items
-                    new_items = self.item_storage.filter_new_items(source_url, items)
+                    new_items = self.storage_service.filter_new_items(source_url, items)
 
                     if new_items:
-                        self.item_storage.store_items(source_url, new_items)
+                        self.storage_service._store_items(source_url, new_items)
                         log.info(f"Stored {len(new_items)} new items for {source_url}")
-                        results[source_url] = self.item_storage.get_stored_items(
+                        results[source_url] = self.storage_service.get_stored_items(
                             source_url
                         )
                         # Update completion status
@@ -496,17 +486,30 @@ class ContentService:
                 elif line.startswith("**Summary:**"):
                     current_item["summary"] = line.replace("**Summary:**", "").strip()
                 elif line.startswith("**Rankings:**"):
-                    values = ast.literal_eval(line.replace("**Rankings:**", "").strip())
-                    if len(values) != 3:
+                    try:
+                        values = ast.literal_eval(
+                            line.replace("**Rankings:**", "").strip()
+                        )
+                        if len(values) != 3:
+                            log.warning(
+                                f"Invalid rankings for {current_item['title']}: "
+                                f"{values}"
+                            )
+                            continue
+                        v1, v2, v3 = values
+                        w_avg = v1 * 30 + v2 * 50 + v3 * 20
+                        current_item["ranking"] = round(w_avg)
+                    except (ValueError, SyntaxError) as e:
                         log.warning(
-                            f"Invalid rankings for {current_item['title']}: {values}"
+                            f"Failed to parse rankings for {current_item['title']}: {e}"
                         )
                         continue
-                    v1, v2, v3 = values
-                    w_avg = v1 * 30 + v2 * 50 + v3 * 20
-                    current_item["ranking"] = round(w_avg)
 
         if current_item:
             items.append(current_item)
 
-        return [item for item in items if item["title"] and item["link"]]
+        return [
+            item
+            for item in items
+            if item["title"] and item["link"] and item.get("ranking") is not None
+        ]

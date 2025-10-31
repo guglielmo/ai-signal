@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 import yaml
 
-from aisignal.core.config import ConfigManager
 from aisignal.core.config_schema import ConfigError
+from aisignal.core.services import ConfigService
 
 
 @pytest.fixture
@@ -19,6 +19,9 @@ def sample_config():
             "template_path": "/path/to/template",
         },
         "prompts": {"content_extraction": "test prompt"},
+        "sync_interval": 24,
+        "min_threshold": 50.0,
+        "max_threshold": 80.0,
     }
 
 
@@ -34,7 +37,7 @@ def test_init_default_path(sample_config, mock_config_file):
         mock_home.return_value = Path("/home/user")
         mock_exists.return_value = True
 
-        config_manager = ConfigManager()
+        config_manager = ConfigService()
         assert config_manager.config_path == Path(
             "/home/user/.config/aisignal/config.yaml"
         )
@@ -47,7 +50,7 @@ def test_init_custom_path(sample_config, mock_config_file):
     ):
         mock_exists.return_value = True
 
-        config_manager = ConfigManager(custom_path)
+        config_manager = ConfigService(custom_path)
         assert config_manager.config_path == custom_path
 
 
@@ -57,7 +60,7 @@ def test_load_config(mock_config_file, sample_config):
         "builtins.open", mock_open(read_data=mock_config_file)
     ):
         mock_exists.return_value = True
-        config_manager = ConfigManager(custom_path)
+        config_manager = ConfigService(custom_path)
 
         assert config_manager.categories == sample_config["categories"]
         assert config_manager.sources == sample_config["sources"]
@@ -86,7 +89,7 @@ def test_save_config(mock_config_file, sample_config):
         patch("pathlib.Path.exists") as mock_exists,
     ):
         mock_exists.return_value = True
-        config_manager = ConfigManager(Path("test.yaml"))
+        config_manager = ConfigService(Path("test.yaml"))
         config_manager.save(sample_config)
 
         # Verify directory creation
@@ -108,17 +111,17 @@ def test_save_config(mock_config_file, sample_config):
 
 def test_missing_config_file():
     with pytest.raises(ConfigError):
-        ConfigManager(Path("nonexistent.yaml"))
+        ConfigService(Path("nonexistent.yaml"))
 
 
 def test_invalid_yaml():
     with patch("builtins.open", mock_open(read_data="invalid: yaml: content")):
         with pytest.raises(ConfigError):
-            ConfigManager(Path("test.yaml"))
+            ConfigService(Path("test.yaml"))
 
 
 def test_missing_required_fields(mock_config_file):
     invalid_config = {"api_keys": {"openai": "key"}}  # Missing required fields
     with patch("builtins.open", mock_open(read_data=yaml.safe_dump(invalid_config))):
         with pytest.raises(ConfigError):
-            ConfigManager(Path("test.yaml"))
+            ConfigService(Path("test.yaml"))
