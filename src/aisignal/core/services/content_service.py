@@ -1,8 +1,11 @@
 import ast
+import html
 import re
+from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 import aiohttp
+import feedparser
 import openai
 from textual import log
 
@@ -193,6 +196,126 @@ class ContentService(IContentService):
         except Exception as e:
             log.error(f"Error fetching full content from {url}: {e}")
             return None
+
+    async def fetch_rss_content(self, url: str) -> Optional[Dict]:
+        """
+        Fetch content from an RSS/Atom feed and convert to markdown format.
+
+        This method parses RSS/Atom feeds directly without using Jina AI,
+        which significantly reduces token costs. The feed entries are converted
+        to markdown format for consistency with the existing content pipeline.
+
+        :param url: The URL of the RSS/Atom feed to fetch
+        :return: A dictionary containing:
+            - url: Original feed URL
+            - title: Feed title
+            - content: Markdown-formatted feed content
+            - diff: ContentDiff object with changes if any
+            Returns None if fetch or parse fails.
+        """
+        try:
+            self.sync_progress.start_source(url)
+
+            # Fetch the feed content
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url, timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    if response.status != 200:
+                        raise APIError("RSS Feed", response.status, response.reason)
+
+                    feed_content = await response.text()
+
+            # Parse the feed
+            feed = feedparser.parse(feed_content)
+
+            # Check if parsing was successful
+            if feed.bozo and not hasattr(feed, "entries"):
+                bozo_exc = feed.get("bozo_exception", "Unknown error")
+                log.error(f"Failed to parse feed from {url}: {bozo_exc}")
+                raise ContentFetchError(url, "Feed parsing failed")
+
+            # Convert feed to markdown
+            new_content = self._feed_to_markdown(feed)
+
+            # Get diff from storage
+            content_diff = self.storage_service.get_content_diff(url, new_content)
+
+            # Store new content if there are changes
+            if content_diff.has_changes:
+                self.storage_service._store_content(url, new_content)
+
+            # Extract feed title
+            feed_title = feed.feed.get("title", "Untitled Feed")
+
+            log.info(
+                f"RSS feed fetched from {url}: {len(feed.entries)} entries "
+                f"(No Jina tokens used)"
+            )
+
+            return {
+                "url": url,
+                "title": feed_title,
+                "content": new_content,
+                "diff": content_diff,
+            }
+
+        except aiohttp.ClientError as e:
+            raise ContentFetchError(url, f"Network error: {str(e)}")
+        except Exception as e:
+            raise ContentFetchError(url, f"Unexpected error: {str(e)}")
+
+    def _feed_to_markdown(self, feed) -> str:
+        """
+        Convert a parsed feed to markdown format.
+
+        Converts feed entries to a structured markdown document with proper
+        formatting for titles, links, dates, and summaries. HTML entities
+        in summaries are properly decoded.
+
+        :param feed: Parsed feed object from feedparser
+        :return: Markdown-formatted string
+        """
+        lines = []
+
+        # Add feed title if available
+        if hasattr(feed.feed, "title"):
+            lines.append(f"# {feed.feed.title}\n")
+
+        # Process each entry
+        for entry in feed.entries:
+            # Entry title with link
+            title = entry.get("title", "Untitled")
+            link = entry.get("link", "")
+
+            if link:
+                lines.append(f"## [{title}]({link})")
+            else:
+                lines.append(f"## {title}")
+
+            # Published date
+            if hasattr(entry, "published_parsed") and entry.published_parsed:
+                try:
+                    pub_date = datetime(*entry.published_parsed[:6])
+                    lines.append(
+                        f"*Published: {pub_date.strftime('%Y-%m-%d %H:%M')}*\n"
+                    )
+                except (TypeError, ValueError):
+                    pass
+
+            # Entry summary/description
+            summary = entry.get("summary", entry.get("description", ""))
+            if summary:
+                # Decode HTML entities and clean up
+                summary = html.unescape(summary)
+                # Remove HTML tags if present (basic cleaning)
+                summary = re.sub(r"<[^>]+>", "", summary)
+                lines.append(f"{summary}\n")
+
+            # Separator between entries
+            lines.append("---\n")
+
+        return "\n".join(lines)
 
     async def analyze_content(
         self,
