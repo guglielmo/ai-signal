@@ -8,7 +8,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import DataTable, Label, ListItem, ListView
 
-from aisignal.core.models import Resource
+from aisignal.core.models import Resource, UserContext
 from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
 from aisignal.ui.textual.screens.base import BaseScreen
 from aisignal.ui.textual.screens.config import ConfigScreen
@@ -109,18 +109,49 @@ class MainScreen(BaseScreen):
 
     def _load_stored_items(self) -> None:
         """
-        Loads stored items from configured sources, processes them into Resource
-        objects, and adds them to the application's resource manager. It retrieves
-        stored items from the parsed item storage, attempts to convert each item
-        into a Resource object, and handles any exceptions encountered during the
-        conversion process.
+        Loads stored items from configured sources.
 
-        Exceptions during Resource creation are logged, and processing continues
-        with remaining items.
+        Uses the CoreService to load resources if available, otherwise falls back
+        to the legacy storage service approach.
 
         :return: None
         """
-        storage = self.app.storage_service  # Assuming this exists
+        # Use CoreService async method via sync wrapper
+        asyncio.create_task(self._load_stored_items_async())
+
+    async def _load_stored_items_async(self) -> None:
+        """
+        Async implementation of loading stored items using CoreService.
+
+        This method uses the CoreService to retrieve resources, providing
+        a cleaner separation between UI and business logic.
+        """
+        try:
+            # Check if CoreService is available
+            if hasattr(self.app, "core") and self.app.core is not None:
+                user_context = UserContext()
+                resources = await self.app.core.get_resources(user_context)
+                self.app.resource_manager.add_resources(resources)
+                self.update_resource_list()
+                self.app.log.debug(
+                    f"Loaded {len(resources)} resources via CoreService"
+                )
+            else:
+                # Fallback to legacy method
+                self._load_stored_items_legacy()
+        except Exception as e:
+            self.app.log.error(f"Error loading resources: {e}")
+            # Fallback to legacy on error
+            self._load_stored_items_legacy()
+
+    def _load_stored_items_legacy(self) -> None:
+        """
+        Legacy method for loading stored items.
+
+        Loads stored items from configured sources, processes them into Resource
+        objects, and adds them to the application's resource manager.
+        """
+        storage = self.app.storage_service
         resources = []
 
         for source in self.app.config_manager.sources:
@@ -261,13 +292,31 @@ class MainScreen(BaseScreen):
             row_key = str(table.cursor_row)  # Get the key of highlighted row
             current_position = table.get_row_index(row_key)
             resource = self.app.resource_manager[row_key]
-            # Mark as removed in storage and manager
-            self.app.storage_service.mark_as_removed(resource.id)
-            self.app.resource_manager.remove_resource(resource.id)
 
-            # Update the UI
-            self.app.notify(f"Removed resource: {resource.title}")
-            self.update_resource_list(cursor_position=current_position)
+            # Use CoreService if available, otherwise fall back to direct storage
+            if hasattr(self.app, "core") and self.app.core is not None:
+                asyncio.create_task(self._delete_resource_async(resource, current_position))
+            else:
+                # Legacy path
+                self.app.storage_service.mark_as_removed(resource.id)
+                self.app.resource_manager.remove_resource(resource.id)
+                self.app.notify(f"Removed resource: {resource.title}")
+                self.update_resource_list(cursor_position=current_position)
+
+    async def _delete_resource_async(self, resource: Resource, cursor_position: int) -> None:
+        """Async helper for deleting a resource via CoreService."""
+        try:
+            user_context = UserContext()
+            result = await self.app.core.remove_resource(user_context, resource.id)
+            if result.is_success:
+                self.app.resource_manager.remove_resource(resource.id)
+                self.app.notify(f"Removed resource: {resource.title}")
+            else:
+                self.app.notify(f"Failed to remove: {result.message}")
+            self.update_resource_list(cursor_position=cursor_position)
+        except Exception as e:
+            self.app.log.error(f"Error deleting resource: {e}")
+            self.app.notify("Error removing resource")
 
     def action_sync(self) -> None:
         """

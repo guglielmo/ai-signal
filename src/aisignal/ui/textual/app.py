@@ -4,13 +4,16 @@ from typing import Iterable, Optional
 from textual.app import App, SystemCommand
 from textual.screen import Screen
 
+from aisignal.core.bootstrap import create_container
 from aisignal.core.export import ExportManager
 from aisignal.core.filters import ResourceFilterState
+from aisignal.core.interfaces import (
+    IConfigManager,
+    IContentService,
+    ICoreService,
+    IStorageService,
+)
 from aisignal.core.resource_manager import ResourceManager
-from aisignal.core.services.config_service import ConfigService
-from aisignal.core.services.content_service import ContentService
-from aisignal.core.services.storage_service import StorageService
-from aisignal.core.token_tracker import TokenTracker
 from aisignal.ui.textual.screens.main import MainScreen
 from aisignal.ui.textual.screens.modals.token_usage_modal import TokenUsageModal
 
@@ -20,6 +23,9 @@ class ContentCuratorApp(App):
     Represents the main application for the content curation tool. It handles the
     initialization of various services and managers, and provides methods to manage
     UI components and error handling.
+
+    The app now uses dependency injection via a service container to manage
+    all core services, providing better separation of concerns and testability.
 
     Attributes:
       CSS_PATH (str): Path to the application's CSS file.
@@ -39,6 +45,9 @@ class ContentCuratorApp(App):
         """
         Initializes the application with necessary configurations and managers.
 
+        Uses the bootstrap module to create a service container and resolve
+        all dependencies via dependency injection.
+
         :param config_path: Path to the configuration file. If not provided, default
           configuration is used.
         :raises Exception: If initialization of any component fails.
@@ -46,21 +55,24 @@ class ContentCuratorApp(App):
         super().__init__()
 
         try:
-            self.config_manager = ConfigService(config_path)
+            # Create service container with all dependencies
+            self._container = create_container(config_path=config_path)
+
+            # Resolve core services from container
+            self._core_service = self._container.resolve(ICoreService)
+            self.config_manager = self._container.resolve(IConfigManager)
+            self.storage_service = self._container.resolve(IStorageService)
+            self.content_service = self._container.resolve(IContentService)
+
+            # UI-specific state (not part of core services)
             self.filter_state = ResourceFilterState(self.on_filter_change)
             self.resource_manager = ResourceManager()
-            self.storage_service = StorageService()
-            self.token_tracker = TokenTracker()
             self.is_syncing = False
-            self.content_service = ContentService(
-                jina_api_key=self.config_manager.jina_api_key,
-                openai_api_key=self.config_manager.openai_api_key,
-                categories=self.config_manager.categories,
-                storage_service=self.storage_service,
-                token_tracker=self.token_tracker,
-                min_threshold=self.config_manager.min_threshold,
-                max_threshold=self.config_manager.max_threshold,
-            )
+
+            # Token tracker is accessed via content service
+            self.token_tracker = self.content_service.token_tracker
+
+            # Export manager (may move to core service later)
             self.export_manager = ExportManager(
                 self.config_manager.obsidian_vault_path,
                 self.config_manager.obsidian_template_path,
@@ -68,6 +80,11 @@ class ContentCuratorApp(App):
         except Exception as e:
             self.log.error(f"Failed to initialize app: {str(e)}")
             raise
+
+    @property
+    def core(self) -> ICoreService:
+        """Get the core service for orchestrating business operations."""
+        return self._core_service
 
     def on_mount(self) -> None:
         """

@@ -5,7 +5,7 @@ from textual.binding import BindingsMap
 from textual.containers import Container, Vertical
 from textual.widgets import Label, LoadingIndicator, MarkdownViewer
 
-from aisignal.core.models import Resource
+from aisignal.core.models import Resource, UserContext
 from aisignal.ui.textual.screens.base import BaseScreen
 
 
@@ -56,9 +56,14 @@ class ResourceDetailScreen(BaseScreen):
         """
         super().__init__()
         self.resource = resource
-        self.is_high_quality = (
-            resource.ranking >= self.app.content_service.max_threshold
-        )
+        # Note: is_high_quality will be set in on_mount when app is available
+        self.is_high_quality = False
+
+    def on_mount(self) -> None:
+        """Called when the screen is mounted. Sets up quality indicator."""
+        # Now self.app is available
+        max_threshold = self.app.content_service.max_threshold
+        self.is_high_quality = self.resource.ranking >= max_threshold
 
     def update_bindings_for_content(self):
         new_bindings = BindingsMap()
@@ -177,8 +182,16 @@ class ResourceDetailScreen(BaseScreen):
             )
             if content:
                 self.resource.full_content = content
-                # Update in database
-                self.app.storage_service.update_full_content(self.resource.id, content)
+                # Update in database - use CoreService if available
+                if hasattr(self.app, "core") and self.app.core is not None:
+                    user_context = UserContext()
+                    await self.app.core.update_resource(
+                        user_context,
+                        self.resource.id,
+                        {"full_content": content}
+                    )
+                else:
+                    self.app.storage_service.update_full_content(self.resource.id, content)
 
                 # Remove all existing widgets
                 await loading.remove()
@@ -237,8 +250,29 @@ class ResourceDetailScreen(BaseScreen):
 
     def action_delete(self) -> None:
         """Mark resource as removed."""
-        self.app.storage_service.mark_as_removed(self.resource.id)
-        self.app.resource_manager.remove_resource(self.resource.id)
-        self.app.notify(f"Removed resource: {self.resource.title}")
-        self.app.update_main_screen()
-        self.app.pop_screen()
+        # Use CoreService if available
+        if hasattr(self.app, "core") and self.app.core is not None:
+            asyncio.create_task(self._delete_resource_async())
+        else:
+            # Legacy path
+            self.app.storage_service.mark_as_removed(self.resource.id)
+            self.app.resource_manager.remove_resource(self.resource.id)
+            self.app.notify(f"Removed resource: {self.resource.title}")
+            self.app.update_main_screen()
+            self.app.pop_screen()
+
+    async def _delete_resource_async(self) -> None:
+        """Async helper for deleting resource via CoreService."""
+        try:
+            user_context = UserContext()
+            result = await self.app.core.remove_resource(user_context, self.resource.id)
+            if result.is_success:
+                self.app.resource_manager.remove_resource(self.resource.id)
+                self.app.notify(f"Removed resource: {self.resource.title}")
+            else:
+                self.app.notify(f"Failed to remove: {result.message}")
+            self.app.update_main_screen()
+            self.app.pop_screen()
+        except Exception as e:
+            self.app.log.error(f"Error deleting resource: {e}")
+            self.app.notify("Error removing resource")

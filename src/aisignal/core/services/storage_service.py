@@ -538,10 +538,19 @@ class StorageService(IStorageService):
                 log.error(f"Error committing transaction: {e}")
 
     def _mark_as_removed(self, item_id: str) -> None:
-        """Mark an item as removed."""
+        """Mark an item as removed (internal)."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE items SET removed = 1 WHERE id = ?", (item_id,))
+
+    def mark_as_removed(self, item_id: str) -> None:
+        """
+        Mark an item as removed (sync version for UI compatibility).
+
+        Args:
+            item_id: The ID of the item to mark as removed
+        """
+        self._mark_as_removed(item_id)
 
     def _get_item_identifier(self, item: Dict) -> str:
         """Generate a unique identifier for an item."""
