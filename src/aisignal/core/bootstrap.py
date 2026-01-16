@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
+from aisignal.core.events import EventBus, get_event_bus, set_event_bus
 from aisignal.core.interfaces import (
     IConfigManager,
     IContentService,
@@ -55,6 +56,9 @@ def create_container(
     database_file = db_path or DEFAULT_DB_PATH
 
     logger.info(f"Bootstrapping services with config: {config_file}")
+
+    # Register event bus first (used by other services)
+    _register_event_bus(container)
 
     # Register services using factories for lazy initialization
     _register_config_service(container, config_file)
@@ -111,6 +115,15 @@ def _register_content_service(container: ServiceContainer, db_path: Path) -> Non
     container.register_factory(IContentService, create_content)
 
 
+def _register_event_bus(container: ServiceContainer) -> EventBus:
+    """Register and return the event bus."""
+    event_bus = EventBus()
+    set_event_bus(event_bus)  # Set as global default
+    container.register(EventBus, event_bus)
+    logger.debug("EventBus registered")
+    return event_bus
+
+
 def _register_core_service(container: ServiceContainer) -> None:
     """Register the core orchestrator service."""
 
@@ -118,12 +131,14 @@ def _register_core_service(container: ServiceContainer) -> None:
         storage = container.resolve(IStorageService)
         config = container.resolve(IConfigManager)
         content = container.resolve(IContentService)
+        event_bus = container.resolve(EventBus)
 
         logger.debug("Creating CoreService")
         return CoreService(
             storage_service=storage,
             config_service=config,
             content_service=content,
+            event_bus=event_bus,
         )
 
     container.register_factory(ICoreService, create_core)
@@ -150,6 +165,9 @@ def create_minimal_container(
     config_file = config_path or DEFAULT_CONFIG_PATH
     database_file = db_path or DEFAULT_DB_PATH
 
+    # Register event bus first
+    _register_event_bus(container)
+
     _register_config_service(container, config_file)
     _register_storage_service(container, database_file)
 
@@ -157,10 +175,12 @@ def create_minimal_container(
     def create_core():
         storage = container.resolve(IStorageService)
         config = container.resolve(IConfigManager)
+        event_bus = container.resolve(EventBus)
         return CoreService(
             storage_service=storage,
             config_service=config,
             content_service=None,
+            event_bus=event_bus,
         )
 
     container.register_factory(ICoreService, create_core)

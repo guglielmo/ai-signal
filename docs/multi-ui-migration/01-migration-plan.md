@@ -165,14 +165,14 @@ Each step adds **only** what's needed for the next step, following YAGNI and KIS
 **Goal**: Implement simple event bus for Core-UI communication
 
 **Tasks**:
-- [ ] Create simple event bus with pub/sub pattern
-- [ ] Define essential events: `SyncProgressEvent`, `ResourceUpdatedEvent`
-- [ ] Implement event emission in Core services
+- [x] Create simple event bus with pub/sub pattern
+- [x] Define essential events: `SyncProgressEvent`, `ResourceUpdatedEvent`, etc.
+- [x] Implement event emission in Core services
 
 **Deliverables**:
-- [ ] `src/aisignal/core/events.py` - Simple event system
-- [ ] Core services emit relevant events
-- [ ] Event bus integrated with DI container
+- [x] `src/aisignal/core/events.py` - Complete event system with EventBus, EventType, event dataclasses
+- [x] Core services emit relevant events (get_resources, update, remove, sync)
+- [x] Event bus integrated with DI container via bootstrap
 
 ### Tuesday-Thursday (6 hours total): UI Event Integration
 **Daily tasks**:

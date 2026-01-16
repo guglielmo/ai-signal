@@ -8,6 +8,16 @@ for the UI layer to interact with.
 import logging
 from typing import Any, Dict, List, Optional, Set
 
+from aisignal.core.events import (
+    EventBus,
+    EventType,
+    ResourceRemovedEvent,
+    ResourcesLoadedEvent,
+    ResourceUpdatedEvent,
+    SyncCompletedEvent,
+    SyncProgressEvent,
+    get_event_bus,
+)
 from aisignal.core.interfaces import (
     IConfigManager,
     IContentService,
@@ -26,10 +36,13 @@ class CoreService(ICoreService):
     This service acts as a facade for the UI layer, providing a clean API
     that hides the complexity of coordinating multiple services.
 
+    Emits events for UI updates via the event bus.
+
     Attributes:
         storage: Storage service for data persistence
         config: Configuration service
         content: Content fetching and analysis service
+        event_bus: Event bus for publishing events
     """
 
     def __init__(
@@ -37,6 +50,7 @@ class CoreService(ICoreService):
         storage_service: IStorageService,
         config_service: IConfigManager,
         content_service: Optional[IContentService] = None,
+        event_bus: Optional[EventBus] = None,
     ):
         """
         Initialize the CoreService with its dependencies.
@@ -45,10 +59,12 @@ class CoreService(ICoreService):
             storage_service: Service for data persistence
             config_service: Service for configuration management
             content_service: Optional service for content fetching/analysis
+            event_bus: Optional event bus for publishing events (uses global if None)
         """
         self._storage = storage_service
         self._config = config_service
         self._content = content_service
+        self._event_bus = event_bus or get_event_bus()
         logger.info("CoreService initialized")
 
     @property
@@ -65,6 +81,11 @@ class CoreService(ICoreService):
     def content(self) -> Optional[IContentService]:
         """Get the content service (may be None if not configured)."""
         return self._content
+
+    @property
+    def event_bus(self) -> EventBus:
+        """Get the event bus for subscribing to events."""
+        return self._event_bus
 
     # =========================================================================
     # ICoreService Implementation
@@ -117,6 +138,10 @@ class CoreService(ICoreService):
             logger.debug(
                 f"Retrieved {len(resources)} resources for user {user_context.user_id}"
             )
+
+            # Emit event for UI updates
+            self._event_bus.emit(ResourcesLoadedEvent(count=len(resources)))
+
             return resources
         except Exception as e:
             logger.error(f"Error retrieving resources: {e}")
@@ -166,6 +191,13 @@ class CoreService(ICoreService):
             )
             if result.is_success:
                 logger.info(f"Updated resource {resource_id}")
+                # Emit event for UI updates
+                self._event_bus.emit(
+                    ResourceUpdatedEvent(
+                        resource_id=resource_id,
+                        updated_fields=list(updates.keys()),
+                    )
+                )
             else:
                 logger.warning(f"Failed to update resource {resource_id}: {result.message}")
             return result
@@ -190,6 +222,10 @@ class CoreService(ICoreService):
             result = await self._storage.mark_resource_removed(user_context, resource_id)
             if result.is_success:
                 logger.info(f"Removed resource {resource_id}")
+                # Emit event for UI updates
+                self._event_bus.emit(
+                    ResourceRemovedEvent(resource_id=resource_id)
+                )
             else:
                 logger.warning(f"Failed to remove resource {resource_id}: {result.message}")
             return result
@@ -257,8 +293,23 @@ class CoreService(ICoreService):
 
         logger.info(f"Starting sync for {len(sync_sources)} sources")
 
-        for source_url in sync_sources:
+        # Emit sync started event
+        from aisignal.core.events import Event
+
+        self._event_bus.emit(Event(type=EventType.SYNC_STARTED))
+
+        for i, source_url in enumerate(sync_sources):
             try:
+                # Emit progress event - fetching
+                self._event_bus.emit(
+                    SyncProgressEvent(
+                        source_url=source_url,
+                        phase="fetching",
+                        progress=(i / len(sync_sources)),
+                        message=f"Fetching {source_url}",
+                    )
+                )
+
                 # Fetch content
                 content_result = await self._content.fetch_content(source_url)
 
@@ -273,6 +324,16 @@ class CoreService(ICoreService):
                     logger.debug(f"No new content for {source_url}")
                     sync_stats["processed"] += 1
                     continue
+
+                # Emit progress event - analyzing
+                self._event_bus.emit(
+                    SyncProgressEvent(
+                        source_url=source_url,
+                        phase="analyzing",
+                        progress=((i + 0.5) / len(sync_sources)),
+                        message=f"Analyzing {source_url}",
+                    )
+                )
 
                 # Analyze content
                 analysis_results = await self._content.analyze_content(
@@ -300,6 +361,16 @@ class CoreService(ICoreService):
         logger.info(
             f"Sync completed: {sync_stats['processed']}/{sync_stats['total_sources']} sources, "
             f"{sync_stats['new_resources']} new resources"
+        )
+
+        # Emit sync completed event
+        self._event_bus.emit(
+            SyncCompletedEvent(
+                total_sources=sync_stats["total_sources"],
+                processed_sources=sync_stats["processed"],
+                new_resources=sync_stats["new_resources"],
+                errors=[e["error"] for e in sync_stats["errors"]],
+            )
         )
 
         return OperationResult.success(
