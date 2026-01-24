@@ -519,7 +519,9 @@ def create_production_container() -> ServiceContainer:
             max_threshold=config.max_threshold,
         )
 
-    container.register_singleton(IContentService, ContentService, factory=create_content_service)
+    container.register_singleton(
+        IContentService, ContentService, factory=create_content_service
+    )
 
     # CoreService orchestrates all other services
     container.register_singleton(ICoreService, CoreService)

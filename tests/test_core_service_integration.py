@@ -5,9 +5,7 @@ This module tests the CoreService orchestrator with real service implementations
 to ensure they work together correctly.
 """
 
-import tempfile
 from datetime import datetime
-from pathlib import Path
 
 import pytest
 import yaml
@@ -21,7 +19,6 @@ from aisignal.core.interfaces import (
 from aisignal.core.models import OperationStatus, Resource, UserContext
 from aisignal.core.services import ConfigService, CoreService, StorageService
 from aisignal.utils.advanced_service_container import ServiceContainer
-
 
 # =============================================================================
 # Fixtures
@@ -291,7 +288,9 @@ async def test_get_resources_with_pagination(
 
 
 @pytest.mark.asyncio
-async def test_get_resource_detail(integration_container, user_context, sample_resources):
+async def test_get_resource_detail(
+    integration_container, user_context, sample_resources
+):
     """Test getting resource detail by ID"""
     core_service = integration_container.get(ICoreService)
     storage_service = integration_container.get(IStorageService)
@@ -310,7 +309,11 @@ async def test_get_resource_detail(integration_container, user_context, sample_r
 
     assert resource is not None
     assert resource.id == first_resource_id
-    assert resource.title in ["AI Fundamentals", "Python Advanced", "Data Science with Pandas"]
+    assert resource.title in [
+        "AI Fundamentals",
+        "Python Advanced",
+        "Data Science with Pandas",
+    ]
 
 
 @pytest.mark.asyncio
@@ -567,7 +570,9 @@ async def test_full_workflow_integration(
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Multi-user isolation will be implemented in future milestone (Issue #4)")
+@pytest.mark.skip(
+    reason="Multi-user isolation will be implemented in future milestone (Issue #4)"
+)
 async def test_multiuser_isolation(integration_container):
     """Test that resources are isolated between users
 
