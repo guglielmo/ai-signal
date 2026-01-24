@@ -4,18 +4,18 @@
 
 Terminal-based AI curator that turns information noise into meaningful signal.
 
-AI Signal is a powerful tool designed to help you regain control over your information diet in today's 
-overwhelming digital landscape. While existing platforms and algorithms decide what content reaches you, 
+AI Signal is a powerful tool designed to help you regain control over your information diet in today's
+overwhelming digital landscape. While existing platforms and algorithms decide what content reaches you,
 AI Signal empowers you to define and implement your own content curation strategy.
 
-By leveraging AI capabilities and your personal preferences, it transforms the constant 
-stream of information into meaningful, relevant insights that matter to you. 
-You define the categories, quality thresholds, and filtering criteria, ensuring that the content you consume 
+By leveraging AI capabilities and your personal preferences, it transforms the constant
+stream of information into meaningful, relevant insights that matter to you.
+You define the categories, quality thresholds, and filtering criteria, ensuring that the content you consume
 aligns with your interests and goals.
 
-Think of it as your personal content curator that works tirelessly to surface valuable information 
-while filtering out noise, all running locally on your machine. 
-With AI Signal, you're not just consuming content – you're actively shaping how information reaches you, 
+Think of it as your personal content curator that works tirelessly to surface valuable information
+while filtering out noise, all running locally on your machine.
+With AI Signal, you're not just consuming content – you're actively shaping how information reaches you,
 making conscious choices about what deserves your attention.
 
 ## Features
@@ -36,7 +36,7 @@ making conscious choices about what deserves your attention.
 pip install ai-signal
 ```
 
-or 
+or
 ```bash
 pipx install ai-siganl
 ```
@@ -132,6 +132,7 @@ As an open source initiative, contributors are welcome! See the [Contributing Gu
 # Clone the repository
 git clone https://github.com/guglielmo/ai-signal.git
 cd ai-signal
+
 
 # Install dependencies
 poetry install
