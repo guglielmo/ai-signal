@@ -1,8 +1,8 @@
 # AI Signal - Product Vision
 
-**Version:** 0.8.1 (moving toward 1.0)
-**Last Updated:** October 31, 2025
-**Status:** Active Development (RSS Integration Phase)
+**Version:** 0.10.0
+**Last Updated:** January 2026
+**Status:** Active Development - Core Architecture Complete
 
 ---
 
@@ -155,6 +155,19 @@ We love the terminal, but we're pragmatic:
 - **API marketplace** - Custom analyzers and exporters
 
 ## Technical Strategy
+
+### Architecture Status
+
+**Core Architecture Migration: Complete (v0.10.0)**
+
+The codebase has been refactored to a clean architecture with:
+- Interface-driven services (Storage, Config, Content)
+- Dependency injection container
+- Clear separation between Core business logic and UI
+- Comprehensive test suite (140+ tests)
+- CI/CD pipeline with automated testing
+
+This foundation enables future multi-UI support (Web API, MCP Server) without touching business logic.
 
 ### Architecture Principles
 

@@ -100,10 +100,10 @@ aisignal run
 
 ## Project Status
 
-**Current Version:** 0.8.1 (Alpha)
-**Status:** Active Development - RSS Integration Phase
+**Current Version:** 0.10.0
+**Status:** Active Development - Core Architecture Complete
 
-AI Signal is a working prototype with core curation features implemented. The project is currently focused on adding native RSS/Atom feed support to reduce costs and improve performance.
+AI Signal is a working application with core curation features and a clean architecture. The codebase has been refactored with interface-driven services and dependency injection, enabling future multi-UI support.
 
 **What Works:**
 - ✅ Content fetching and analysis with AI (Jina AI + OpenAI)
@@ -112,11 +112,13 @@ AI Signal is a working prototype with core curation features implemented. The pr
 - ✅ Terminal UI with keyboard-driven interface
 - ✅ Export to Obsidian
 - ✅ Token usage tracking and cost visibility
+- ✅ Core services architecture (Storage, Config, Content)
+- ✅ CI/CD pipeline with automated testing (Python 3.10-3.12)
 
 **In Development:**
 - 🚧 RSS/Atom feed parsing (Issues #14-21)
 - 🚧 Feed auto-discovery
-- 🚧 Comprehensive test suite
+- 🚧 Event system for real-time UI updates
 
 **Coming Soon:**
 - 📋 Resource notes and annotations
