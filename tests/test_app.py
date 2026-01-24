@@ -46,7 +46,26 @@ def test_content_curator_app_initialization(
     mock_export_manager.assert_called_once_with("/path/to/vault", "/path/to/template")
 
 
-def test_notify_user():
+@patch("aisignal.ui.textual.app.ConfigService")
+@patch("aisignal.ui.textual.app.ResourceFilterState")
+@patch("aisignal.ui.textual.app.ResourceManager")
+@patch("aisignal.ui.textual.app.StorageService")
+@patch("aisignal.ui.textual.app.ContentService")
+@patch("aisignal.ui.textual.app.ExportManager")
+def test_notify_user(
+    mock_export_manager,
+    mock_content_service,
+    mock_storage_service,
+    mock_resource_manager,
+    mock_filter_state,
+    mock_config_manager,
+):
+    mock_config_manager.return_value.jina_api_key = "dummy_key"
+    mock_config_manager.return_value.openai_api_key = "dummy_key"
+    mock_config_manager.return_value.categories = ["cat1", "cat2"]
+    mock_config_manager.return_value.obsidian_vault_path = "/path/to/vault"
+    mock_config_manager.return_value.obsidian_template_path = "/path/to/template"
+
     app = ContentCuratorApp()
     app.notify = Mock()
 
@@ -57,8 +76,28 @@ def test_notify_user():
     app.notify.assert_called_with("Test message")
 
 
+@patch("aisignal.ui.textual.app.ConfigService")
+@patch("aisignal.ui.textual.app.ResourceFilterState")
+@patch("aisignal.ui.textual.app.ResourceManager")
+@patch("aisignal.ui.textual.app.StorageService")
+@patch("aisignal.ui.textual.app.ContentService")
+@patch("aisignal.ui.textual.app.ExportManager")
 @patch("aisignal.ui.textual.app.ContentCuratorApp.log", new_callable=Mock)
-def test_handle_error(mock_log):
+def test_handle_error(
+    mock_log,
+    mock_export_manager,
+    mock_content_service,
+    mock_storage_service,
+    mock_resource_manager,
+    mock_filter_state,
+    mock_config_manager,
+):
+    mock_config_manager.return_value.jina_api_key = "dummy_key"
+    mock_config_manager.return_value.openai_api_key = "dummy_key"
+    mock_config_manager.return_value.categories = ["cat1", "cat2"]
+    mock_config_manager.return_value.obsidian_vault_path = "/path/to/vault"
+    mock_config_manager.return_value.obsidian_template_path = "/path/to/template"
+
     app = ContentCuratorApp()
     app.notify_user = Mock()
 
