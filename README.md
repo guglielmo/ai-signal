@@ -1,5 +1,10 @@
 # AI Signal
 
+![Tests](https://img.shields.io/badge/tests-194%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![Code Style](https://img.shields.io/badge/code%20style-black-000000)
+
 ![AI Signal Terminal](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
 Terminal-based AI curator that turns information noise into meaningful signal.
@@ -30,6 +35,19 @@ making conscious choices about what deserves your attention.
 - ⌨️ Fully keyboard-driven interface
 - 🎨 Beautiful terminal UI powered by Textual
 
+## Architecture Highlights
+
+AI Signal features a **clean, modular architecture** designed for maintainability and future extensibility:
+
+- **Event-Driven Communication**: Real-time UI updates via pub/sub event bus
+- **Interface-Based Design**: Abstract base classes (ABC) for all core services
+- **Dependency Injection**: Automated service resolution with lifecycle management
+- **Thread-Safe Operations**: Lock-protected concurrent access to shared state
+- **Comprehensive Testing**: 94% test coverage across core services
+- **Multi-UI Ready**: Separation of business logic and presentation layer
+
+See the [Event Bus Architecture](docs/architecture/event-bus.md) guide for detailed information on the event system.
+
 ## Installation
 
 ```bash
@@ -38,7 +56,7 @@ pip install ai-signal
 
 or
 ```bash
-pipx install ai-siganl
+pipx install ai-signal
 ```
 for global installation.
 
@@ -113,12 +131,13 @@ AI Signal is a working application with core curation features and a clean archi
 - ✅ Export to Obsidian
 - ✅ Token usage tracking and cost visibility
 - ✅ Core services architecture (Storage, Config, Content)
+- ✅ Event system for real-time UI updates (Issues #25 #26)
 - ✅ CI/CD pipeline with automated testing (Python 3.10-3.12)
+- ✅ 94% test coverage with 194 passing tests
 
 **In Development:**
 - 🚧 RSS/Atom feed parsing (Issues #14-21)
 - 🚧 Feed auto-discovery
-- 🚧 Event system for real-time UI updates
 
 **Coming Soon:**
 - 📋 Resource notes and annotations
@@ -214,6 +233,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **[Configuration Guide](docs/configuration.md)** - How to configure AI Signal
 - **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute
 - **[Technical Specification](docs/technical_specification.md)** - Architecture details
+- **[Event Bus Architecture](docs/architecture/event-bus.md)** - Event-driven architecture guide
+- **[Event Catalog](docs/architecture/event-catalog.md)** - Complete event reference
 - **[Project Analysis](docs/analysis-2025-10/)** - Comprehensive analysis and roadmap rationale
 
 ## Acknowledgments

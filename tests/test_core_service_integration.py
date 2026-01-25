@@ -634,3 +634,179 @@ async def test_multiuser_isolation(integration_container):
     user2_results = await core_service.get_resources(user2)
     assert len(user2_results) == 1
     assert user2_results[0].user_id == "user2"
+
+
+# =============================================================================
+# Additional Tests for Coverage
+# =============================================================================
+
+
+@pytest.fixture
+def real_core_service(temp_db, temp_config_file):
+    """Create a real CoreService instance for coverage tests"""
+    from tests.mocks import MockContentService
+
+    storage = StorageService(temp_db)
+    config = ConfigService(temp_config_file)
+    content = MockContentService()
+
+    return CoreService(
+        storage_service=storage,
+        config_manager=config,
+        content_service=content,
+        event_bus=None,  # No event bus for these tests
+    )
+
+
+@pytest.mark.asyncio
+async def test_sync_sources_with_no_sources_configured(
+    real_core_service, user_context, tmp_path
+):
+    """Test sync_sources when no sources are configured"""
+    # Pass empty sources list explicitly (overriding config)
+    result = await real_core_service.sync_sources(user_context, source_urls=[])
+
+    # Should return invalid_input error
+    assert result.status == OperationStatus.INVALID_INPUT
+    assert "No sources configured" in result.message
+
+
+@pytest.mark.asyncio
+async def test_search_resources(real_core_service, user_context, tmp_path):
+    """Test searching resources by text query"""
+    # Create test resources with different titles and summaries
+    resources = [
+        Resource(
+            id="search_test_1",
+            user_id="test_user",  # Match user_context
+            title="Python Programming Guide",
+            url="https://example.com/python",
+            categories=["Programming"],
+            ranking=85.0,
+            summary="Learn Python basics and advanced concepts",
+            full_content="Python is a great language",
+            datetime=datetime.now(),
+            source="https://example.com",
+        ),
+        Resource(
+            id="search_test_2",
+            user_id="test_user",  # Match user_context
+            title="JavaScript Best Practices",
+            url="https://example.com/javascript",
+            categories=["Programming"],
+            ranking=80.0,
+            summary="Master JavaScript development",
+            full_content="JavaScript is versatile",
+            datetime=datetime.now(),
+            source="https://example.com",
+        ),
+        Resource(
+            id="search_test_3",
+            user_id="test_user",  # Match user_context
+            title="Machine Learning Basics",
+            url="https://example.com/ml",
+            categories=["AI"],
+            ranking=90.0,
+            summary="Introduction to Python-based ML",
+            full_content="ML with Python",
+            datetime=datetime.now(),
+            source="https://example.com",
+        ),
+    ]
+
+    # Store resources
+    storage_service = real_core_service.storage
+    await storage_service.store_resources(user_context, resources)
+
+    # Search for "Python" (should match 2 resources: title + summary)
+    results = await real_core_service.search_resources(user_context, "Python")
+    assert len(results) == 2
+    # Check by title instead of ID since search matches content
+    titles = [r.title for r in results]
+    assert "Python Programming Guide" in titles
+    assert "Machine Learning Basics" in titles
+
+    # Search for "JavaScript" (should match 1 resource)
+    results = await real_core_service.search_resources(user_context, "JavaScript")
+    assert len(results) == 1
+    assert "JavaScript" in results[0].title
+
+    # Search with no matches
+    results = await real_core_service.search_resources(user_context, "NonExistent")
+    assert len(results) == 0
+
+    # Search with filters
+    results = await real_core_service.search_resources(
+        user_context, "Python", filters={"categories": ["Programming"]}
+    )
+    assert len(results) == 1
+    assert "Python Programming Guide" in results[0].title
+
+
+@pytest.mark.asyncio
+async def test_update_config_error_handling(real_core_service):
+    """Test update_config error handling when save fails"""
+    # Mock the config save method to raise an exception
+    original_save = real_core_service.config.save
+
+    def failing_save(config):
+        raise Exception("Failed to save config")
+
+    real_core_service.config.save = failing_save
+
+    # Attempt to update config
+    result = await real_core_service.update_config({"test_key": "test_value"})
+
+    # Should return error result
+    assert result.status == OperationStatus.ERROR
+    assert "Failed to update configuration" in result.message
+
+    # Restore original save method
+    real_core_service.config.save = original_save
+
+
+@pytest.mark.asyncio
+async def test_sync_sources_with_webpage_content(real_core_service, user_context):
+    """Test sync_sources with regular webpage (non-RSS) content"""
+    # Configure a regular webpage URL (not RSS)
+    webpage_url = "https://example.com/article"
+
+    # Mock the content service to return webpage content
+    async def mock_fetch_content(url):
+        return "Test webpage content from " + url
+
+    # Replace the fetch_content method temporarily
+    original_fetch = real_core_service.content.fetch_content
+    real_core_service.content.fetch_content = mock_fetch_content
+
+    # Mock analyze_content to return analyzed items
+    async def mock_analyze_content(content_list, prompt):
+        return {
+            webpage_url: [
+                {
+                    "title": "Test Article",
+                    "link": "https://example.com/article/1",
+                    "categories": ["Tech"],
+                    "ranking": 85.0,
+                    "summary": "Test summary",
+                    "full_content": "Test content",
+                }
+            ]
+        }
+
+    original_analyze = real_core_service.content.analyze_content
+    real_core_service.content.analyze_content = mock_analyze_content
+
+    # Run sync with the webpage URL
+    result = await real_core_service.sync_sources(
+        user_context, source_urls=[webpage_url]
+    )
+
+    # Verify sync was successful
+    assert result.is_success
+    assert result.data["sources_synced"] == 1
+    assert result.data["new_items"] == 1
+
+    # Restore original methods
+    real_core_service.content.fetch_content = original_fetch
+    real_core_service.content.analyze_content = original_analyze
