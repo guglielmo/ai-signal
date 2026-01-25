@@ -82,7 +82,9 @@ class EventBus(IEventBus):
         with self._lock:
             if handler in self._subscribers[event_type]:
                 self._subscribers[event_type].remove(handler)
-                logger.debug(f"Unsubscribed {handler.__name__} from {event_type.__name__}")
+                logger.debug(
+                    f"Unsubscribed {handler.__name__} from {event_type.__name__}"
+                )
 
     def publish(self, event: BaseEvent) -> None:
         """
@@ -92,8 +94,10 @@ class EventBus(IEventBus):
             event: The event instance to publish
 
         Example:
-            >>> event = SyncProgressEvent(current=3, total=10, message="Fetching sources...")
-            >>> event_bus.publish(event)  # All subscribed handlers will be called
+            >>> event = SyncProgressEvent(
+            ...     current=3, total=10, message="Fetching sources..."
+            ... )
+            >>> event_bus.publish(event)  # All handlers will be called
         """
         event_type = type(event)
 
