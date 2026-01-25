@@ -525,7 +525,7 @@ UI updates in real-time
 ## References
 
 - **Vision Document:** `/home/user/ai-signal/VISION.md`
-- **Project Status:** `/home/user/ai-signal/docs/PROJECT_STATUS_REPORT.md`
+- **Project Status:** `/home/user/ai-signal/STATUS.md`
 - **Developer Guide:** `/home/user/ai-signal/docs/DEVELOPER_GUIDE.md`
 - **GitHub Milestone:** RSS Integration (Issues #14-21)
 - **Related Files:**

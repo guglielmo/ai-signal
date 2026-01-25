@@ -153,5 +153,5 @@ When updating project status:
 
 - **[README.md](README.md)** - Project overview and getting started
 - **[VISION.md](VISION.md)** - Product vision and strategic direction
-- **[docs/PROJECT_STATUS_REPORT.md](docs/PROJECT_STATUS_REPORT.md)** - Detailed technical status report
 - **[CLAUDE.md](CLAUDE.md)** - Developer guidance for AI assistance
+- **[docs/](docs/)** - Additional documentation (architecture, configuration, guides)
