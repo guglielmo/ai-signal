@@ -576,5 +576,5 @@ ERROR - Error in event handler _handle_sync_progress for SyncProgressEvent: ...
 ## See Also
 
 - [Core Services Architecture](./core-services.md)
-- [Multi-UI Migration Plan](../multi-ui-migration/01-migration-plan.md)
+- [Multi-UI Migration Plan](../archive/migration/01-migration-plan.md)
 - [Testing Guide](../CONTRIBUTING.md#testing)

@@ -255,7 +255,7 @@ Each step added **only** what's needed for the next step, following YAGNI and KI
 **Tasks**:
 - [x] End-to-end testing of complete system (done throughout migration)
 - [x] Performance benchmarking vs original (meets benchmarks)
-- [x] Create migration success report (see `docs/PROJECT_STATUS_REPORT.md`)
+- [x] Create migration success report (see `STATUS.md`)
 
 **Deliverables**:
 - [x] Complete system validation
@@ -371,4 +371,4 @@ The key principle was maintained throughout: **Each week builds only on the prev
 
 **Migration Completed:** January 25, 2026
 **Next Milestone:** RSS Integration (Issues #14-21)
-**Documentation:** See `docs/PROJECT_STATUS_REPORT.md` for comprehensive status
+**Documentation:** See `STATUS.md` in project root for comprehensive status

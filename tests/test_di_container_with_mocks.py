@@ -448,8 +448,8 @@ class TestWeek1FridayDeliverables:
         """✅ Deliverable: Clear implementation roadmap for Week 2"""
         from pathlib import Path
 
-        # Verify roadmap documentation exists
-        docs_path = Path("./docs/multi-ui-migration")
+        # Verify roadmap documentation exists (moved to archive)
+        docs_path = Path("./docs/archive/migration")
         migration_plan = docs_path / "01-migration-plan.md"
         migration_utils = docs_path / "migration-utilities.md"
 

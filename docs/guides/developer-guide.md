@@ -995,11 +995,11 @@ storage = container.get(StorageService)   # Wrong - use interface
 ## Additional Resources
 
 ### Documentation
-- [Architecture Documentation](./architecture/) - Detailed architecture docs
-- [Event System Guide](./architecture/event-bus.md) - Event system details
-- [Event Catalog](./architecture/event-catalog.md) - Available events
-- [Project Status Report](./PROJECT_STATUS_REPORT.md) - Current status
-- [Migration Plan](./multi-ui-migration/01-migration-plan.md) - Architecture evolution
+- [Architecture Documentation](../architecture/) - Detailed architecture docs
+- [Event System Guide](../architecture/event-bus.md) - Event system details
+- [Event Catalog](../architecture/event-catalog.md) - Available events
+- [Project Status](../../STATUS.md) - Current status and roadmap
+- [Migration Plan](../archive/migration/01-migration-plan.md) - Architecture evolution
 
 ### Code Examples
 - `src/aisignal/core/services/` - Service implementations
