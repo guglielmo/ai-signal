@@ -201,8 +201,8 @@ See `docs/architecture/event-bus.md` and `docs/architecture/event-catalog.md` fo
 - `src/aisignal/ui/textual/screens/`: UI screens (main, detail, config)
 - `src/aisignal/cli.py`: CLI entry point
 
-**Legacy** (being migrated):
-- `src/aisignal/services/`: Old service implementations
+**Legacy** (migration complete, may still contain some old implementations):
+- `src/aisignal/services/`: Old service implementations (prefer Core services instead)
 
 **Testing**:
 - `tests/conftest.py`: Test fixtures and setup
@@ -413,18 +413,26 @@ pytest tests/test_*_service.py # Only service unit tests
 
 ### Current Development Focus
 
-**Completed Architecture Work:**
+**✅ Architecture Migration Complete** (January 25, 2026)
+
+The core architecture migration has been successfully completed with excellent quality metrics:
 - ✅ Clean core architecture with interface-driven design (ABC-based)
 - ✅ Event Bus pub/sub system with real-time UI updates (Issues #25, #26)
 - ✅ Dependency injection with automated service resolution
 - ✅ 94% test coverage across core services (194 tests passing)
 - ✅ Thread-safe concurrent operations with lock protection
+- ✅ All core features functional and production-ready
 
-**Current Priority: RSS Integration** (see GitHub Milestone #1, issues #14-21)
+See `docs/PROJECT_STATUS_REPORT.md` for comprehensive migration status and `docs/multi-ui-migration/01-migration-plan.md` for detailed completion status.
+
+**🎯 Current Priority: RSS Integration** (GitHub Milestone #1, Issues #14-21)
+
+This is the critical next step for product viability:
 - Native RSS/Atom feed parsing to reduce API costs by 50-80%
 - Feed auto-discovery from blog URLs
 - Hybrid approach: RSS for feeds, Jina AI for HTML pages
 - Estimated: 16 hours, 9 issues
+- **Impact**: Critical cost reduction enabling affordable AI features
 
 **Always prefer**:
 - New core services (`src/aisignal/core/`) over legacy (`src/aisignal/services/`)
