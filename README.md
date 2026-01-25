@@ -7,153 +7,96 @@
 
 ![AI Signal Terminal](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
-Terminal-based AI curator that turns information noise into meaningful signal.
+**Turn information noise into meaningful signal with AI-powered content curation.**
 
-AI Signal is a powerful tool designed to help you regain control over your information diet in today's
-overwhelming digital landscape. While existing platforms and algorithms decide what content reaches you,
-AI Signal empowers you to define and implement your own content curation strategy.
+AI Signal helps you regain control over your information diet. While platforms and algorithms decide what content reaches you, AI Signal empowers you to define your own curation strategy. You set the categories, quality thresholds, and filtering criteria—ensuring the content you consume aligns with your interests and goals.
 
-By leveraging AI capabilities and your personal preferences, it transforms the constant
-stream of information into meaningful, relevant insights that matter to you.
-You define the categories, quality thresholds, and filtering criteria, ensuring that the content you consume
-aligns with your interests and goals.
-
-Think of it as your personal content curator that works tirelessly to surface valuable information
-while filtering out noise, all running locally on your machine.
-With AI Signal, you're not just consuming content – you're actively shaping how information reaches you,
-making conscious choices about what deserves your attention.
+Think of it as your personal content curator, running locally on your machine, surfacing valuable information while filtering out noise.
 
 ## Features
 
-- 🤖 AI-powered content analysis and categorization
-- 🔍 Smart filtering based on customizable categories and quality thresholds
-- 📊 Advanced sorting by date, ranking, or combined criteria
-- 🔄 Automatic content synchronization from multiple sources
-- 🌐 Support for various content sources (YouTube, Medium, Reddit, Hacker News, RSS feeds)
-- 📱 Share curated content directly to social media
-- 📝 Export to Obsidian vault with customizable templates
-- ⌨️ Fully keyboard-driven interface
-- 🎨 Beautiful terminal UI powered by Textual
+- **AI-Powered Analysis** - Smart categorization and ranking using OpenAI
+- **Custom Filters** - Define categories, quality thresholds, and filtering criteria
+- **Multiple Sources** - Support for RSS feeds, YouTube, Medium, Reddit, Hacker News
+- **Export & Share** - Send to Obsidian vault or social media platforms
+- **Keyboard-Driven** - Fully accessible terminal interface powered by Textual
+- **Cost Tracking** - Monitor AI token usage and costs in real-time
 
-## Architecture Highlights
+## Why AI Signal?
 
-AI Signal features a **clean, modular architecture** designed for maintainability and future extensibility:
+Built with a **clean, event-driven architecture** featuring:
+- Interface-based design (ABC) for all core services
+- Dependency injection with automated service resolution
+- Real-time UI updates via pub/sub event bus
+- 94% test coverage across core services
+- Thread-safe operations ready for future multi-UI support
 
-- **Event-Driven Communication**: Real-time UI updates via pub/sub event bus
-- **Interface-Based Design**: Abstract base classes (ABC) for all core services
-- **Dependency Injection**: Automated service resolution with lifecycle management
-- **Thread-Safe Operations**: Lock-protected concurrent access to shared state
-- **Comprehensive Testing**: 94% test coverage across core services
-- **Multi-UI Ready**: Separation of business logic and presentation layer
+See [Architecture Documentation](docs/architecture/) for technical details.
 
-See the [Event Bus Architecture](docs/architecture/event-bus.md) guide for detailed information on the event system.
+## Getting Started
 
-## Installation
+### Installation
 
 ```bash
+# Install with pip
 pip install ai-signal
-```
 
-or
-```bash
+# Or with pipx (recommended for global installation)
 pipx install ai-signal
-```
-for global installation.
 
-
-If using poetry:
-
-```bash
+# Or with poetry
 poetry add ai-signal
-poetry shell # enter the virtualenv
 ```
 
-## Quick Start
+### Quick Start
 
-1. Create a configuration file:
 ```bash
+# Initialize configuration
 aisignal init
-```
-modify it, as described in the [configuration guide](docs/configuration.md):
 
-2. Run AI Signal:
-```bash
+# Edit ~/.config/aisignal/config.yaml with your:
+# - OpenAI API key
+# - Jina AI API key
+# - Content sources
+# - Categories of interest
+
+# Run the application
 aisignal run
 ```
 
-## Keyboard Shortcuts
+See the [Configuration Guide](docs/configuration.md) for detailed setup instructions.
 
-### For all views
-- `q`: Quit application
-- `c`: Toggle configuration panel
-- `s`: Force sync content
-- `f`: Toggle filters sidebar
-- `u`: Show usage and costs modal
+## Usage
 
-### Within the items list
-- `↑`/`↓`: Navigate items
-- `enter`: Show item details
-- `o`: Open in browser
-- `t`: Share on Twitter
-- `l`: Share on LinkedIn
-- `e`: Export to Obsidian
+### Keyboard Shortcuts
+
+**Global:** `q` Quit • `c` Config • `s` Sync • `f` Filters • `u` Usage stats
+
+**Navigation:** `↑↓` Move • `Enter` Details • `o` Open browser
+
+**Actions:** `e` Export to Obsidian • `t` Share Twitter • `l` Share LinkedIn
 
 
-## Screenshots
+## Project Status & Roadmap
 
-### Main Interface
-![Main Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
+**Current Version:** 0.10.0 • **Status:** Active Development
 
-### Configuration interface
-![Configuration Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/configuration.png)
+AI Signal is production-ready with all core features functional. The architecture migration is complete with 94% test coverage.
 
-### Resource detail interface
-![Resource Detail Interface](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/detail.png)
+**Currently:** Finishing RSS/Atom feed integration (88% complete) to reduce API costs by 50-80%.
 
-### Sidebar hidden
-![Sidebar hidden](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/sidebar_hidden.png)
-
-### Tokens usage and costs
-![Tokens modal](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/tokens_modal.png)
-
-## Project Status
-
-**Current Version:** 0.10.0
-**Status:** Active Development - Core Architecture Complete
-
-AI Signal is a working application with core curation features and a clean architecture. The codebase has been refactored with interface-driven services and dependency injection, enabling future multi-UI support.
-
-**What Works:**
-- ✅ Content fetching and analysis with AI (Jina AI + OpenAI)
-- ✅ Customizable categories and quality thresholds
-- ✅ Dual-threshold filtering system
-- ✅ Terminal UI with keyboard-driven interface
-- ✅ Export to Obsidian
-- ✅ Token usage tracking and cost visibility
-- ✅ Core services architecture (Storage, Config, Content)
-- ✅ Event system for real-time UI updates (Issues #25 #26)
-- ✅ CI/CD pipeline with automated testing (Python 3.10-3.12)
-- ✅ 94% test coverage with 194 passing tests
-
-**In Development:**
-- 🚧 RSS/Atom feed parsing (Issues #14-21)
-- 🚧 Feed auto-discovery
-
-**Coming Soon:**
-- 📋 Resource notes and annotations
-- 📊 Statistics dashboard
-- 🤖 Multi-LLM support
-
-As an open source initiative, contributors are welcome! See the [Contributing Guide](docs/CONTRIBUTING.md) and [VISION.md](VISION.md) for strategic direction.
+See [STATUS.md](STATUS.md) for detailed project status, roadmap, and what's in development.
 
 
-### Development environment setup
+## Contributing
 
+We welcome contributions! Whether it's bug reports, feature requests, or code contributions, your help makes AI Signal better.
+
+**Development Setup:**
 ```bash
 # Clone the repository
 git clone https://github.com/guglielmo/ai-signal.git
 cd ai-signal
-
 
 # Install dependencies
 poetry install
@@ -161,67 +104,12 @@ poetry install
 # Run tests
 poetry run pytest
 
-# Run the application in development mode
-poetry run aisignal version
-```
-
-or, entering the virtualenv:
-
-```bash
+# Run the application
 poetry shell
-aisignal version
+aisignal run
 ```
 
-
-## Roadmap
-
-See [VISION.md](VISION.md) for complete product vision and strategic direction.
-
-### Current Focus: RSS Integration (Q4 2025)
-
-Native RSS/Atom feed support to dramatically reduce costs and improve performance:
-
-- [ ] **RSS Feed Parsing** - Direct parsing of RSS/Atom feeds (no API costs)
-- [ ] **Auto-Discovery** - Automatically find feeds from blog URLs
-- [ ] **Feed Metadata** - Track feed type, entry count, last update
-- [ ] **Hybrid Approach** - RSS for feeds, Jina AI fallback for HTML pages
-- [ ] **Comprehensive Testing** - Unit and integration tests with real feeds
-
-**Why RSS First:** Reduces content fetching costs by 50-80% and improves performance 10-100×, enabling affordable AI features downstream.
-
-**Status:** Milestone defined with 9 issues (#14-21). Estimated 16 hours implementation. [See detailed plan →](https://github.com/guglielmo/ai-signal/milestone/1)
-
-### Phase 2: Core UX Improvements (Q1 2026)
-
-- [ ] **Resource Notes** - Add personal notes and annotations to saved items
-- [ ] **Statistics Dashboard** - Which sources and categories are most valuable?
-- [ ] **Better Sorting** - Enhanced sort options (recency, category, source)
-- [ ] **UI Polish** - Refinements based on real usage patterns
-
-### Phase 3: AI Intelligence Features (Q2 2026)
-
-- [ ] **Content Summarization** - Generate summaries and key takeaways
-- [ ] **Wisdom Extraction** - Pull out actionable insights from content
-- [ ] **Multi-LLM Support** - Choose from OpenAI, Claude, Gemini, or local models
-- [ ] **Batch Optimization** - Efficient grouping of source analysis
-
-### Phase 4: Learning & Personalization (Q3 2026+)
-
-- [ ] **Feedback Loop** - Learn from your reading patterns and choices
-- [ ] **Category Suggestions** - Discover new interests based on behavior
-- [ ] **Source Recommendations** - Find relevant blogs and feeds
-- [ ] **YouTube Videos** - Transcribe and analyze video content
-- [ ] **Content Archiving** - Read/unread status, filtering, search
-
-### Future Considerations
-
-- [ ] Multi-user and team features
-- [ ] Public curations and sharing
-- [ ] Podcast and audio content support
-- [ ] Browser extension for saving pages
-- [ ] Mobile companion app
-
-**Note:** The roadmap is intentionally sequenced - RSS integration enables cost-effective AI features, which in turn make learning features viable. See [technical analysis](docs/analysis-2025-10/ai_signal_tech_assessment.md) for detailed rationale.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## License
 
@@ -229,13 +117,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Documentation
 
+- **[STATUS.md](STATUS.md)** - Current project status and roadmap
 - **[VISION.md](VISION.md)** - Product vision and strategic direction
-- **[Configuration Guide](docs/configuration.md)** - How to configure AI Signal
+- **[Configuration Guide](docs/configuration.md)** - Setup and configuration
+- **[Architecture](docs/architecture/)** - Technical architecture and design
 - **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute
-- **[Technical Specification](docs/technical_specification.md)** - Architecture details
-- **[Event Bus Architecture](docs/architecture/event-bus.md)** - Event-driven architecture guide
-- **[Event Catalog](docs/architecture/event-catalog.md)** - Complete event reference
-- **[Project Analysis](docs/analysis-2025-10/)** - Comprehensive analysis and roadmap rationale
 
 ## Acknowledgments
 

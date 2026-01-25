@@ -12,6 +12,31 @@ The application uses a terminal user interface (TUI) built with the Textual libr
 **Test Coverage:** 94% (194 passing tests)
 **Python:** 3.9-3.12 supported
 
+## Project Status Documentation
+
+**IMPORTANT:** [STATUS.md](STATUS.md) in the project root is the **single source of truth** for:
+- Current project status and version
+- What's working and what's in development
+- Detailed roadmap with phases and priorities
+- GitHub issues and milestones alignment
+- Technical debt and known issues
+
+**Guidelines for updating project status:**
+1. **Always update STATUS.md** when project status changes
+2. **Keep it aligned** with GitHub Issues and Milestones
+3. **Never duplicate** roadmap or status information in other files
+4. **README.md** should only contain a brief status summary that points to STATUS.md
+5. **CLAUDE.md** should reference STATUS.md for current priorities, not duplicate content
+6. When completing features or milestones, update STATUS.md and close corresponding GitHub issues
+
+**Where status information belongs:**
+- ✅ **STATUS.md**: Detailed status, roadmap, phases, what's working, what's in development
+- ✅ **GitHub Issues**: Individual tasks and bugs
+- ✅ **GitHub Milestones**: Feature groupings and release planning
+- ✅ **README.md**: Brief current version and status summary only (points to STATUS.md)
+- ❌ **NOT in CLAUDE.md**: No detailed roadmaps or status (reference STATUS.md instead)
+- ❌ **NOT in code comments**: No project-level status information
+
 ## Common Commands
 
 ### Setup and Development
@@ -423,16 +448,12 @@ The core architecture migration has been successfully completed with excellent q
 - ✅ Thread-safe concurrent operations with lock protection
 - ✅ All core features functional and production-ready
 
-See `docs/PROJECT_STATUS_REPORT.md` for comprehensive migration status and `docs/multi-ui-migration/01-migration-plan.md` for detailed completion status.
+**🎯 Current Priority:** See [STATUS.md](STATUS.md) for the current development focus, roadmap, and what's in development.
 
-**🎯 Current Priority: RSS Integration** (GitHub Milestone #1, Issues #14-21)
-
-This is the critical next step for product viability:
-- Native RSS/Atom feed parsing to reduce API costs by 50-80%
-- Feed auto-discovery from blog URLs
-- Hybrid approach: RSS for feeds, Jina AI for HTML pages
-- Estimated: 16 hours, 9 issues
-- **Impact**: Critical cost reduction enabling affordable AI features
+**Quick Summary:**
+- RSS/Atom feed integration (nearly complete, 88%)
+- Focus on cost reduction and performance improvements
+- See STATUS.md for detailed roadmap and phases
 
 **Always prefer**:
 - New core services (`src/aisignal/core/`) over legacy (`src/aisignal/services/`)
