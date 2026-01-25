@@ -79,7 +79,7 @@ See the [Configuration Guide](docs/configuration.md) for detailed setup instruct
 
 ## Project Status & Roadmap
 
-**Current Version:** 0.10.0 • **Status:** Active Development
+**Current Version:** 0.11.0 • **Status:** Active Development
 
 AI Signal is production-ready with all core features functional. The architecture migration is complete with 94% test coverage.
 

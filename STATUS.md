@@ -1,6 +1,6 @@
 # AI Signal - Project Status
 
-**Current Version:** 0.10.0
+**Current Version:** 0.11.0
 **Status:** Active Development - Core Architecture Complete
 **Last Updated:** January 25, 2026
 

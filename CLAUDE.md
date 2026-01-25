@@ -8,7 +8,7 @@ AI Signal is a terminal-based AI curator designed to help users filter and organ
 
 The application uses a terminal user interface (TUI) built with the Textual library, providing a keyboard-driven experience for managing and interacting with curated content. It integrates with OpenAI and Jina AI services for content analysis and extraction, and supports exporting to Obsidian and sharing to social media platforms.
 
-**Current Version:** 0.10.0
+**Current Version:** 0.11.0
 **Test Coverage:** 94% (194 passing tests)
 **Python:** 3.9-3.12 supported
 
