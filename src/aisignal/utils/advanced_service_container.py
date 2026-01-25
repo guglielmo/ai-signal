@@ -476,20 +476,54 @@ def create_production_container() -> ServiceContainer:
     """
     Create service container with production service registrations.
 
-    Note: Service implementations will be registered here in later sprints.
-
     Returns:
-        ServiceContainer configured for production use
+        ServiceContainer configured for production use with all core services
     """
+    from aisignal.core.interfaces import (
+        IConfigManager,
+        IContentService,
+        ICoreService,
+        IStorageService,
+    )
+    from aisignal.core.services import (
+        ConfigService,
+        ContentService,
+        CoreService,
+        StorageService,
+    )
+    from aisignal.core.token_tracker import TokenTracker
+
     container = ServiceContainer()
 
-    # Register production services in later migration sprints
-    # container.register_singleton(IStorageService, SQLiteStorageService)
-    # container.register_singleton(IConfigService, FileConfigService)
-    # container.register_singleton(IFetchService, JinaFetchService)
-    # container.register_singleton(IAnalysisService, OpenAIAnalysisService)
-    # container.register_singleton(IUserService, DefaultUserService)
-    # container.register_singleton(IEventBus, AsyncEventBus)
-    # container.register_singleton(ICoreService, CoreService)
+    # Register core services with proper dependency injection
+    container.register_singleton(IStorageService, StorageService)
+    container.register_singleton(IConfigManager, ConfigService)
+
+    # TokenTracker is needed by ContentService but not part of the interfaces
+    # Register it as a singleton instance
+    token_tracker = TokenTracker()
+    container.register_instance(TokenTracker, token_tracker)
+
+    # ContentService has complex dependencies, use a factory
+    def create_content_service():
+        config = container.get(IConfigManager)
+        storage = container.get(IStorageService)
+        tracker = container.get(TokenTracker)
+        return ContentService(
+            jina_api_key=config.jina_api_key,
+            openai_api_key=config.openai_api_key,
+            categories=config.categories,
+            storage_service=storage,
+            token_tracker=tracker,
+            min_threshold=config.min_threshold,
+            max_threshold=config.max_threshold,
+        )
+
+    container.register_singleton(
+        IContentService, ContentService, factory=create_content_service
+    )
+
+    # CoreService orchestrates all other services
+    container.register_singleton(ICoreService, CoreService)
 
     return container
