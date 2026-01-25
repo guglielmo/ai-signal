@@ -8,7 +8,12 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import DataTable, Label, ListItem, ListView
 
-from aisignal.core.models import Resource
+from aisignal.core.models import (
+    Resource,
+    ResourceUpdatedEvent,
+    SyncCompletedEvent,
+    SyncProgressEvent,
+)
 from aisignal.core.sync_exceptions import ContentAnalysisError, ContentFetchError
 from aisignal.ui.textual.screens.base import BaseScreen
 from aisignal.ui.textual.screens.config import ConfigScreen
@@ -44,6 +49,7 @@ class MainScreen(BaseScreen):
         self.is_syncing = False
         self._filters_active = False
         self._last_selected_row = None
+        self._sync_modal = None
 
     def compose_content(self) -> ComposeResult:
         """
@@ -98,6 +104,16 @@ class MainScreen(BaseScreen):
 
         # give the focus to the data table
         table.focus()
+
+        # Subscribe to Core events if EventBus is available
+        if hasattr(self.app, "event_bus") and self.app.event_bus:
+            self.app.event_bus.subscribe(SyncProgressEvent, self._handle_sync_progress)
+            self.app.event_bus.subscribe(
+                ResourceUpdatedEvent, self._handle_resource_updated
+            )
+            self.app.event_bus.subscribe(
+                SyncCompletedEvent, self._handle_sync_completed
+            )
 
     def _on_screen_resume(self) -> None:
         """Called when main screen becomes active again after being suspended"""
@@ -306,6 +322,7 @@ class MainScreen(BaseScreen):
 
         # Create and push the sync status modal
         sync_modal = SyncStatusModal(self.app.content_service.sync_progress)
+        self._sync_modal = sync_modal  # Store reference for event handlers
         await self.app.push_screen(sync_modal)
 
         try:
@@ -390,6 +407,7 @@ class MainScreen(BaseScreen):
         finally:
             self.is_syncing = False
             sync_modal.progress.complete_sync()
+            self._sync_modal = None  # Clear reference
             self.update_resource_list()
 
     def update_resource_list(self, cursor_position: int | None = None) -> None:
@@ -510,3 +528,55 @@ class MainScreen(BaseScreen):
         self.app.log.info(event.row_key)
         resource = self.app.resource_manager[event.row_key]
         self.app.push_screen(ResourceDetailScreen(resource))
+
+    # =============================================================================
+    # EVENT HANDLERS FOR CORE EVENTS
+    # =============================================================================
+
+    def _handle_sync_progress(self, event: SyncProgressEvent) -> None:
+        """
+        Handle SyncProgressEvent from Core service.
+
+        Updates the sync modal with real-time progress information.
+
+        Args:
+            event: SyncProgressEvent containing progress information
+        """
+        if self._sync_modal:
+            # Update the sync modal with progress
+            self._sync_modal.update_progress(event.current, event.total, event.message)
+
+    def _handle_resource_updated(self, event: ResourceUpdatedEvent) -> None:
+        """
+        Handle ResourceUpdatedEvent from Core service.
+
+        Automatically refreshes the resource list when resources are created,
+        updated, or removed.
+
+        Args:
+            event: ResourceUpdatedEvent containing resource update information
+        """
+        # Refresh the resource list to show updated data
+        # Use call_later to ensure UI update happens on main thread
+        self.call_later(self.update_resource_list)
+
+    def _handle_sync_completed(self, event: SyncCompletedEvent) -> None:
+        """
+        Handle SyncCompletedEvent from Core service.
+
+        Displays notification when sync completes and refreshes the resource list.
+
+        Args:
+            event: SyncCompletedEvent containing sync completion information
+        """
+        # Display notification about sync completion
+        if event.success:
+            self.app.notify_user(event.message)
+        else:
+            error_msg = event.message
+            if event.errors:
+                error_msg += f" ({len(event.errors)} errors)"
+            self.app.notify_user(error_msg)
+
+        # Refresh the resource list
+        self.call_later(self.update_resource_list)

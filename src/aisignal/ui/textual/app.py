@@ -9,6 +9,7 @@ from aisignal.core.filters import ResourceFilterState
 from aisignal.core.resource_manager import ResourceManager
 from aisignal.core.services.config_service import ConfigService
 from aisignal.core.services.content_service import ContentService
+from aisignal.core.services.event_bus import EventBus
 from aisignal.core.services.storage_service import StorageService
 from aisignal.core.token_tracker import TokenTracker
 from aisignal.ui.textual.screens.main import MainScreen
@@ -46,6 +47,9 @@ class ContentCuratorApp(App):
         super().__init__()
 
         try:
+            # Initialize EventBus for Core-UI communication
+            self.event_bus = EventBus()
+
             self.config_manager = ConfigService(config_path)
             self.filter_state = ResourceFilterState(self.on_filter_change)
             self.resource_manager = ResourceManager()

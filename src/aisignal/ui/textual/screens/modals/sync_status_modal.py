@@ -19,6 +19,9 @@ class SyncStatusModal(ModalScreen[None]):
     def __init__(self, progress: SyncProgress = None):
         super().__init__()
         self.progress = progress
+        self._current_progress = 0
+        self._total_progress = 100
+        self._progress_message = ""
 
     def compose(self) -> ComposeResult:
         with Vertical():
@@ -39,6 +42,18 @@ class SyncStatusModal(ModalScreen[None]):
 
     def watch_progress(self) -> None:
         """Update display when progress changes"""
+        # If using event-based progress, use the tracked values
+        if hasattr(self, "_current_progress"):
+            progress_bar = self.query_one(ProgressBar)
+            if self._total_progress > 0:
+                percentage = (self._current_progress / self._total_progress) * 100
+                progress_bar.update(total=100, progress=percentage)
+            return
+
+        # Otherwise, use the legacy progress object
+        if not self.progress:
+            return
+
         # Update progress bar
         progress_bar = self.query_one(ProgressBar)
         progress_bar.update(total=100, progress=self.progress.overall_progress)
@@ -64,3 +79,22 @@ class SyncStatusModal(ModalScreen[None]):
             table.add_row(
                 source.url, status_display, items_count, new_items_count, error_text
             )
+
+    def update_progress(self, current: int, total: int, message: str = "") -> None:
+        """
+        Update progress from event-based system.
+
+        Args:
+            current: Current progress value
+            total: Total progress value
+            message: Progress message
+        """
+        self._current_progress = current
+        self._total_progress = total
+        self._progress_message = message
+
+        # Update progress bar immediately
+        progress_bar = self.query_one(ProgressBar)
+        if total > 0:
+            percentage = (current / total) * 100
+            progress_bar.update(total=100, progress=percentage)
