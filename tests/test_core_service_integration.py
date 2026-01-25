@@ -478,6 +478,10 @@ async def test_get_config_value(integration_container):
     assert categories == ["AI", "Programming", "Data Science"]
     assert sources == ["https://example.com", "https://test.com"]
 
+    # Test invalid key raises ValueError
+    with pytest.raises(ValueError, match="Configuration key 'invalid_key' not found"):
+        core_service.get_config_value("invalid_key")
+
 
 @pytest.mark.asyncio
 async def test_update_config(integration_container, temp_config_file):

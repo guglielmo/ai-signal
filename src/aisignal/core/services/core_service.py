@@ -5,6 +5,8 @@ This module implements the ICoreService interface, which orchestrates
 all core business logic by coordinating Storage, Config, and Content services.
 """
 
+import hashlib
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from aisignal.core.interfaces import (
@@ -226,16 +228,20 @@ class CoreService(ICoreService):
                         # Convert items to resources
                         resources = []
                         for item in items:
+                            # Generate ID from URL hash since items don't have IDs
+                            item_url = item.get("link", "")
+                            item_id = hashlib.md5(item_url.encode()).hexdigest()
+
                             resource = Resource(
-                                id=item.get("id", ""),
+                                id=item_id,
                                 user_id=user_context.user_id,
                                 title=item.get("title", ""),
-                                url=item.get("link", ""),
+                                url=item_url,
                                 categories=item.get("categories", []),
                                 ranking=float(item.get("ranking", 0)),
                                 summary=item.get("summary", ""),
                                 full_content=item.get("full_content", ""),
-                                datetime=item.get("first_seen", ""),
+                                datetime=datetime.now(),
                                 source=source_url,
                             )
                             resources.append(resource)
@@ -274,6 +280,12 @@ class CoreService(ICoreService):
         This is a placeholder for future full-text search implementation.
         Currently returns filtered resources that match the query in title or summary.
 
+        TODO: Performance optimization needed for large datasets
+            - Current implementation loads all resources into memory (O(n) scan)
+            - Consider pushing search logic to storage layer for better performance
+            - Evaluate SQLite FTS5 (Full-Text Search) or external search engine
+            - Add pagination support for search results
+
         Args:
             user_context: Context of the user making the request
             query: Search query string
@@ -304,17 +316,13 @@ class CoreService(ICoreService):
 
         Returns:
             Configuration value
+
+        Raises:
+            ValueError: If the configuration key doesn't exist
         """
-        config_map = {
-            "categories": self.config.categories,
-            "sources": self.config.sources,
-            "min_threshold": self.config.min_threshold,
-            "max_threshold": self.config.max_threshold,
-            "sync_interval": self.config.sync_interval,
-            "obsidian_vault_path": self.config.obsidian_vault_path,
-            "obsidian_template_path": self.config.obsidian_template_path,
-        }
-        return config_map.get(key)
+        if hasattr(self.config, key):
+            return getattr(self.config, key)
+        raise ValueError(f"Configuration key '{key}' not found")
 
     async def update_config(self, new_config: dict) -> OperationResult:
         """
