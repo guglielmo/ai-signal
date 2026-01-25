@@ -5,12 +5,13 @@ Tests that feed type, entry count, and last publish date are properly
 captured and stored in the database.
 """
 
-import pytest
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from aisignal.core.services.content_service import ContentService
 from aisignal.core.services.storage_service import StorageService

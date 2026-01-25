@@ -5,8 +5,10 @@ Tests the automatic feed detection, routing logic, and HTML feed discovery
 implemented in Issues #17 and #18.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from aisignal.core.services.content_service import ContentService
 from aisignal.utils.feed_detector import discover_feeds
 
