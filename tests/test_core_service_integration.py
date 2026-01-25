@@ -798,7 +798,9 @@ async def test_sync_sources_with_webpage_content(real_core_service, user_context
     real_core_service.content.analyze_content = mock_analyze_content
 
     # Run sync with the webpage URL
-    result = await real_core_service.sync_sources(user_context, source_urls=[webpage_url])
+    result = await real_core_service.sync_sources(
+        user_context, source_urls=[webpage_url]
+    )
 
     # Verify sync was successful
     assert result.is_success
