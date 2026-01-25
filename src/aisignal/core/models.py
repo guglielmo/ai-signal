@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 
 
 @dataclass
@@ -156,3 +156,84 @@ class OperationResult(Generic[T]):
     def is_error(self) -> bool:
         """Check if the operation resulted in an error."""
         return not self.is_success
+
+
+# =============================================================================
+# EVENT TYPES FOR EVENT BUS
+# =============================================================================
+
+
+@dataclass
+class BaseEvent:
+    """Base class for all events in the event bus system.
+
+    Args:
+        timestamp: When the event occurred
+        user_context: User context for the event
+    """
+
+    timestamp: datetime = field(default_factory=datetime.now)
+    user_context: Optional[UserContext] = None
+
+
+@dataclass
+class SyncProgressEvent(BaseEvent):
+    """Event emitted during sync operations to report progress.
+
+    Args:
+        current: Current progress value (e.g., items processed)
+        total: Total items to process
+        message: Human-readable progress message
+        percentage: Progress as percentage (0-100)
+    """
+
+    current: int = 0
+    total: int = 0
+    message: str = ""
+
+    @property
+    def percentage(self) -> float:
+        """Calculate progress percentage."""
+        if self.total == 0:
+            return 0.0
+        return (self.current / self.total) * 100
+
+
+@dataclass
+class ResourceUpdatedEvent(BaseEvent):
+    """Event emitted when a resource is created, updated, or removed.
+
+    Args:
+        resource_id: ID of the affected resource
+        operation: Type of operation ('created', 'updated', 'removed')
+        resource: The full resource object (optional)
+    """
+
+    resource_id: str = ""
+    operation: str = "updated"  # 'created', 'updated', 'removed'
+    resource: Optional[Resource] = None
+
+
+@dataclass
+class SyncCompletedEvent(BaseEvent):
+    """Event emitted when a sync operation completes.
+
+    Args:
+        success: Whether sync completed successfully
+        total_resources: Total number of resources processed
+        new_resources: Number of new resources added
+        updated_resources: Number of resources updated
+        errors: List of errors encountered (if any)
+        message: Summary message
+    """
+
+    success: bool = True
+    total_resources: int = 0
+    new_resources: int = 0
+    updated_resources: int = 0
+    errors: List[str] = field(default_factory=list)
+    message: str = ""
+
+
+# Type alias for event handler callbacks
+EventHandler = Callable[[BaseEvent], None]

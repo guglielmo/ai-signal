@@ -3,9 +3,9 @@ Interfaces for AI Signal Core
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
-from aisignal.core.models import OperationResult, Resource, UserContext
+from aisignal.core.models import BaseEvent, OperationResult, Resource, UserContext
 
 # =============================================================================
 # RESOURCE MANAGER INTERFACE
@@ -444,6 +444,63 @@ class IStorageService(ABC):
 
         Returns:
             Dizionario con statistiche utente
+        """
+        pass
+
+
+# =============================================================================
+# EVENT BUS INTERFACE
+# =============================================================================
+
+
+class IEventBus(ABC):
+    """
+    Interface for the EventBus component that manages event publishing and subscription.
+
+    Provides a pub/sub mechanism for loose coupling between Core services and UI layer.
+    """
+
+    @abstractmethod
+    def subscribe(
+        self, event_type: Type[BaseEvent], handler: Callable[[BaseEvent], None]
+    ) -> None:
+        """
+        Subscribe to a specific event type.
+
+        Args:
+            event_type: The type of event to subscribe to
+            handler: Callback function to handle the event
+        """
+        pass
+
+    @abstractmethod
+    def unsubscribe(
+        self, event_type: Type[BaseEvent], handler: Callable[[BaseEvent], None]
+    ) -> None:
+        """
+        Unsubscribe from a specific event type.
+
+        Args:
+            event_type: The type of event to unsubscribe from
+            handler: The callback function to remove
+        """
+        pass
+
+    @abstractmethod
+    def publish(self, event: BaseEvent) -> None:
+        """
+        Publish an event to all subscribers.
+
+        Args:
+            event: The event instance to publish
+        """
+        pass
+
+    @abstractmethod
+    def clear_all(self) -> None:
+        """
+        Clear all event subscriptions.
+        Useful for testing and cleanup.
         """
         pass
 

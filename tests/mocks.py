@@ -6,16 +6,17 @@ for use in unit and integration tests.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from aisignal.core.interfaces import (
     IConfigManager,
     IContentService,
     ICoreService,
+    IEventBus,
     IResourceManager,
     IStorageService,
 )
-from aisignal.core.models import OperationResult, Resource, UserContext
+from aisignal.core.models import BaseEvent, OperationResult, Resource, UserContext
 
 
 class MockResourceManager(IResourceManager):
@@ -192,7 +193,7 @@ class MockConfigManager(IConfigManager):
     @property
     def sources(self) -> List[str]:
         """Retrieves the list of source strings from the configuration."""
-        return ["https://example.com"]
+        return self._sources
 
     @property
     def content_extraction_prompt(self) -> str:
@@ -388,10 +389,12 @@ class MockCoreService(ICoreService):
         storage_service: IStorageService = None,
         config_manager: IConfigManager = None,
         content_service: IContentService = None,
+        event_bus: IEventBus = None,
     ):
         self.storage = storage_service or MockStorageService()
         self.config = config_manager or MockConfigManager()
         self.content = content_service or MockContentService()
+        self.event_bus = event_bus
 
     async def get_resources(
         self,
@@ -467,6 +470,50 @@ class MockCoreService(ICoreService):
         return OperationResult.not_found("Resource not found")
 
 
+class MockEventBus(IEventBus):
+    """Mock event bus for testing"""
+
+    def __init__(self):
+        from collections import defaultdict
+        from typing import Callable, Type
+
+        self.subscribers: Dict[Type[BaseEvent], List[Callable]] = defaultdict(list)
+        self.published_events: List[BaseEvent] = []
+
+    def subscribe(
+        self, event_type: Type[BaseEvent], handler: Callable[[BaseEvent], None]
+    ) -> None:
+        """Subscribe to events"""
+        if handler not in self.subscribers[event_type]:
+            self.subscribers[event_type].append(handler)
+
+    def unsubscribe(
+        self, event_type: Type[BaseEvent], handler: Callable[[BaseEvent], None]
+    ) -> None:
+        """Unsubscribe from events"""
+        if handler in self.subscribers[event_type]:
+            self.subscribers[event_type].remove(handler)
+
+    def publish(self, event: BaseEvent) -> None:
+        """Publish event and track it for testing"""
+        self.published_events.append(event)
+        event_type = type(event)
+        for handler in self.subscribers.get(event_type, []):
+            try:
+                handler(event)
+            except Exception:
+                pass  # Ignore errors in tests
+
+    def clear_all(self) -> None:
+        """Clear all subscriptions and events"""
+        self.subscribers.clear()
+        self.published_events.clear()
+
+    def get_events_of_type(self, event_type: Type[BaseEvent]) -> List[BaseEvent]:
+        """Get all published events of a specific type (test helper)"""
+        return [e for e in self.published_events if isinstance(e, event_type)]
+
+
 def create_test_container():
     """Create service container with mock services for testing"""
     from aisignal.utils.advanced_service_container import ServiceContainer
@@ -476,6 +523,7 @@ def create_test_container():
     # Register mock services
     container.register_singleton(IStorageService, MockStorageService)
     container.register_singleton(IConfigManager, MockConfigManager)
+    container.register_singleton(IEventBus, MockEventBus)
     container.register_singleton(IContentService, MockContentService)
     container.register_singleton(ICoreService, MockCoreService)
     container.register_singleton(IResourceManager, MockResourceManager)
