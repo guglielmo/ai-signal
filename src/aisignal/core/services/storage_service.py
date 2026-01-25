@@ -127,9 +127,7 @@ class StorageService(IStorageService):
             cursor.execute(
                 "ALTER TABLE sources ADD COLUMN feed_entry_count INTEGER DEFAULT 0"
             )
-            cursor.execute(
-                "ALTER TABLE sources ADD COLUMN last_publish_date TIMESTAMP"
-            )
+            cursor.execute("ALTER TABLE sources ADD COLUMN last_publish_date TIMESTAMP")
 
     # =============================================================================
     # RESOURCE MANAGEMENT (implements IStorageService)
@@ -547,7 +545,8 @@ class StorageService(IStorageService):
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    SELECT source_type, feed_entry_count, last_publish_date, last_updated
+                    SELECT source_type, feed_entry_count,
+                           last_publish_date, last_updated
                     FROM sources
                     WHERE url = ?
                 """,

@@ -7,7 +7,7 @@ from HTML pages.
 """
 
 from typing import List, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import aiohttp
 import feedparser

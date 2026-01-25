@@ -99,10 +99,11 @@ class ContentService(IContentService):
         """
         Fetch content from URL with automatic feed detection and routing.
 
-        This method automatically detects whether the URL points to an RSS/Atom feed
-        or an HTML page, and routes to the appropriate handler:
+        This method automatically detects whether the URL points to an RSS/Atom
+        feed or an HTML page, and routes to the appropriate handler:
         - Direct RSS/Atom feeds: Uses fetch_rss_content() (no Jina tokens)
-        - HTML with discoverable feeds: Auto-discovers and uses first feed (no Jina tokens)
+        - HTML with discoverable feeds: Auto-discovers and uses first feed
+          (no Jina tokens)
         - HTML pages: Uses _fetch_html_content() (Jina AI with tokens)
 
         :param url: The URL to fetch content from.
