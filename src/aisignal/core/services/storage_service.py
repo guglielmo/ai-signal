@@ -104,7 +104,32 @@ class StorageService(IStorageService):
             """
             )
 
+            # Add feed metadata columns if they don't exist (migration)
+            self._add_feed_metadata_columns(cursor)
+
             conn.commit()
+
+    def _add_feed_metadata_columns(self, cursor):
+        """
+        Add feed metadata columns to sources table if they don't exist.
+
+        This is a migration to support Issue #19 - Feed metadata tracking.
+        """
+        try:
+            # Check if columns exist by trying to query them
+            cursor.execute("SELECT source_type FROM sources LIMIT 1")
+        except sqlite3.OperationalError:
+            # Columns don't exist, add them
+            log.info("Adding feed metadata columns to sources table")
+            cursor.execute(
+                "ALTER TABLE sources ADD COLUMN source_type TEXT DEFAULT 'html'"
+            )
+            cursor.execute(
+                "ALTER TABLE sources ADD COLUMN feed_entry_count INTEGER DEFAULT 0"
+            )
+            cursor.execute(
+                "ALTER TABLE sources ADD COLUMN last_publish_date TIMESTAMP"
+            )
 
     # =============================================================================
     # RESOURCE MANAGEMENT (implements IStorageService)
@@ -466,8 +491,24 @@ class StorageService(IStorageService):
             result = cursor.fetchone()
             return result[0] if result else None
 
-    def _store_content(self, url: str, content: str):
-        """Store content in the database."""
+    def _store_content(
+        self,
+        url: str,
+        content: str,
+        source_type: str = "html",
+        feed_entry_count: int = 0,
+        last_publish_date: Optional[str] = None,
+    ):
+        """
+        Store content in the database with optional feed metadata.
+
+        Args:
+            url: Source URL
+            content: Markdown content
+            source_type: Type of source ('rss', 'atom', or 'html')
+            feed_entry_count: Number of entries in feed (0 for HTML)
+            last_publish_date: Last publish date from feed (None for HTML)
+        """
         content_hash = hashlib.sha256(content.encode()).hexdigest()
 
         with sqlite3.connect(self.db_path) as conn:
@@ -475,11 +516,50 @@ class StorageService(IStorageService):
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO sources
-                (url, markdown_content, content_hash, last_updated)
-                VALUES (?, ?, ?, ?)
+                (url, markdown_content, content_hash, last_updated,
+                 source_type, feed_entry_count, last_publish_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-                (url, content, content_hash, datetime.now().isoformat()),
+                (
+                    url,
+                    content,
+                    content_hash,
+                    datetime.now().isoformat(),
+                    source_type,
+                    feed_entry_count,
+                    last_publish_date,
+                ),
             )
+
+    def get_source_metadata(self, url: str) -> Optional[Dict[str, Any]]:
+        """
+        Get feed metadata for a source URL.
+
+        Args:
+            url: Source URL
+
+        Returns:
+            Dictionary with metadata or None if source not found
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT source_type, feed_entry_count, last_publish_date, last_updated
+                    FROM sources
+                    WHERE url = ?
+                """,
+                    (url,),
+                )
+                row = cursor.fetchone()
+                if row:
+                    return dict(row)
+                return None
+        except Exception as e:
+            log.error(f"Error getting source metadata for {url}: {e}")
+            return None
 
     def _store_items(self, source_url: str, items: List[Dict]):
         """Store a list of items into the database."""

@@ -18,7 +18,7 @@ from aisignal.core.sync_exceptions import (
 )
 from aisignal.core.sync_status import SyncProgress, SyncStatus
 from aisignal.core.token_tracker import COST_PER_MILLION, TokenTracker
-from aisignal.utils.feed_detector import discover_feeds, is_feed
+from aisignal.utils.feed_detector import discover_feeds, get_feed_type, is_feed
 
 
 class ContentService(IContentService):
@@ -185,10 +185,11 @@ class ContentService(IContentService):
                     content_diff = self.storage_service.get_content_diff(
                         url, new_content
                     )
-                    # Store new content if there are changes
-
+                    # Store new content with HTML metadata if there are changes
                     if content_diff.has_changes:
-                        self.storage_service._store_content(url, new_content)
+                        self.storage_service._store_content(
+                            url, new_content, source_type="html"
+                        )
 
                     return {
                         "url": url,
@@ -283,22 +284,50 @@ class ContentService(IContentService):
                 log.error(f"Failed to parse feed from {url}: {bozo_exc}")
                 raise ContentFetchError(url, "Feed parsing failed")
 
+            # Determine feed type
+            feed_type = await get_feed_type(url)
+            if not feed_type:
+                # Fallback to detecting from parsed feed version
+                version = getattr(feed, "version", "").lower()
+                if "atom" in version:
+                    feed_type = "atom"
+                elif "rss" in version:
+                    feed_type = "rss"
+                else:
+                    feed_type = "rss"  # Default to RSS
+
+            # Extract feed metadata
+            entry_count = len(feed.entries)
+            last_publish_date = None
+            if feed.entries and hasattr(feed.entries[0], "published_parsed"):
+                try:
+                    pub_date = datetime(*feed.entries[0].published_parsed[:6])
+                    last_publish_date = pub_date.isoformat()
+                except (TypeError, ValueError):
+                    pass
+
             # Convert feed to markdown
             new_content = self._feed_to_markdown(feed)
 
             # Get diff from storage
             content_diff = self.storage_service.get_content_diff(url, new_content)
 
-            # Store new content if there are changes
+            # Store new content with feed metadata if there are changes
             if content_diff.has_changes:
-                self.storage_service._store_content(url, new_content)
+                self.storage_service._store_content(
+                    url,
+                    new_content,
+                    source_type=feed_type,
+                    feed_entry_count=entry_count,
+                    last_publish_date=last_publish_date,
+                )
 
             # Extract feed title
             feed_title = feed.feed.get("title", "Untitled Feed")
 
             log.info(
-                f"RSS feed fetched from {url}: {len(feed.entries)} entries "
-                f"(No Jina tokens used)"
+                f"{feed_type.upper()} feed fetched from {url}: "
+                f"{entry_count} entries (No Jina tokens used)"
             )
 
             return {
