@@ -2,13 +2,16 @@
 RSS/Atom feed detection utilities.
 
 This module provides utility functions to detect if a URL points to an RSS or Atom
-feed and to identify the specific feed type.
+feed and to identify the specific feed type. It also includes feed auto-discovery
+from HTML pages.
 """
 
-from typing import Optional
+from typing import List, Optional
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import feedparser
+from bs4 import BeautifulSoup
 
 
 async def is_feed(url: str) -> bool:
@@ -113,3 +116,58 @@ async def get_feed_type(url: str) -> Optional[str]:
     except (aiohttp.ClientError, TimeoutError, Exception):
         # Handle network failures and other errors gracefully
         return None
+
+
+async def discover_feeds(url: str) -> List[str]:
+    """
+    Discover RSS/Atom feeds from an HTML page.
+
+    Parses the HTML page for <link rel="alternate"> tags that point to feeds.
+    Handles both relative and absolute URLs and returns feeds in priority order.
+
+    Args:
+        url: The URL of the HTML page to search
+
+    Returns:
+        List of discovered feed URLs (empty if none found or on error)
+
+    Examples:
+        >>> await discover_feeds("https://blog.example.com")
+        ['https://blog.example.com/feed.xml', 'https://blog.example.com/atom.xml']
+        >>> await discover_feeds("https://example.com/about")
+        []
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
+                if response.status != 200:
+                    return []
+
+                html_content = await response.text()
+
+        # Parse HTML with BeautifulSoup
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        # Find all link tags with rel="alternate"
+        feed_links = []
+        for link in soup.find_all("link", rel="alternate"):
+            # Check if it's an RSS or Atom feed
+            link_type = link.get("type", "").lower()
+            href = link.get("href", "")
+
+            if not href:
+                continue
+
+            # Only process RSS and Atom feeds
+            if link_type in ["application/rss+xml", "application/atom+xml"]:
+                # Convert relative URLs to absolute
+                absolute_url = urljoin(url, href)
+                feed_links.append(absolute_url)
+
+        return feed_links
+
+    except (aiohttp.ClientError, TimeoutError, Exception):
+        # Handle network failures and other errors gracefully
+        return []

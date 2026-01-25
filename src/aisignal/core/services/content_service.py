@@ -18,6 +18,7 @@ from aisignal.core.sync_exceptions import (
 )
 from aisignal.core.sync_status import SyncProgress, SyncStatus
 from aisignal.core.token_tracker import COST_PER_MILLION, TokenTracker
+from aisignal.utils.feed_detector import discover_feeds, is_feed
 
 
 class ContentService(IContentService):
@@ -96,7 +97,54 @@ class ContentService(IContentService):
 
     async def fetch_content(self, url: str) -> Optional[Dict]:
         """
-        Fetch content from URL and compare with stored version.
+        Fetch content from URL with automatic feed detection and routing.
+
+        This method automatically detects whether the URL points to an RSS/Atom feed
+        or an HTML page, and routes to the appropriate handler:
+        - Direct RSS/Atom feeds: Uses fetch_rss_content() (no Jina tokens)
+        - HTML with discoverable feeds: Auto-discovers and uses first feed (no Jina tokens)
+        - HTML pages: Uses _fetch_html_content() (Jina AI with tokens)
+
+        :param url: The URL to fetch content from.
+        :return: A dictionary containing:
+            - url: Original URL
+            - title: Extracted title
+            - content: Full markdown content
+            - diff: ContentDiff object with changes if any
+            Returns None if fetch fails.
+        """
+        try:
+            # Step 1: Check if URL is a direct feed
+            if await is_feed(url):
+                log.info(f"Detected RSS/Atom feed: {url}")
+                return await self.fetch_rss_content(url)
+
+            # Step 2: Try to discover feeds from HTML page
+            log.info(f"Attempting feed auto-discovery for: {url}")
+            discovered_feeds = await discover_feeds(url)
+
+            if discovered_feeds:
+                feed_url = discovered_feeds[0]
+                log.info(
+                    f"Auto-discovered {len(discovered_feeds)} feed(s) from {url}, "
+                    f"using: {feed_url}"
+                )
+                return await self.fetch_rss_content(feed_url)
+
+            # Step 3: Fall back to Jina AI for HTML pages
+            log.info(f"No feeds found, using Jina AI for HTML page: {url}")
+            return await self._fetch_html_content(url)
+
+        except Exception as e:
+            log.error(f"Error fetching content from {url}: {e}")
+            raise
+
+    async def _fetch_html_content(self, url: str) -> Optional[Dict]:
+        """
+        Fetch HTML content from URL using Jina AI and compare with stored version.
+
+        This is the internal method for fetching HTML pages via Jina AI Reader.
+        For automatic routing between RSS and HTML, use fetch_content() instead.
 
         :param url: The URL to fetch content from.
         :return: A dictionary containing:
