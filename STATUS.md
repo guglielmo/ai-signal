@@ -118,8 +118,6 @@ This STATUS.md file should remain aligned with:
 
 ### Code Quality Improvements
 
-From `docs/todo.md`:
-
 1. **Error Handling**
    - Create dedicated error handling module
    - Implement specific error types

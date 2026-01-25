@@ -196,7 +196,7 @@ This directory contains comprehensive analysis reports generated on **October 31
 - **VISION.md** - Product vision and strategic direction (project root)
 - **CLAUDE.md** - Project-specific instructions (project root)
 - **README.md** - Getting started guide (project root)
-- **docs/technical_specification.md** - Technical architecture
+- **docs/archive/technical-spec-legacy.md** - Technical architecture (legacy)
 - **GitHub Issues** - Live issue tracking
 
 ---
