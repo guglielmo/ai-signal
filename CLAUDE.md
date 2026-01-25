@@ -8,6 +8,10 @@ AI Signal is a terminal-based AI curator designed to help users filter and organ
 
 The application uses a terminal user interface (TUI) built with the Textual library, providing a keyboard-driven experience for managing and interacting with curated content. It integrates with OpenAI and Jina AI services for content analysis and extraction, and supports exporting to Obsidian and sharing to social media platforms.
 
+**Current Version:** 0.10.0
+**Test Coverage:** 94% (194 passing tests)
+**Python:** 3.9-3.12 supported
+
 ## Common Commands
 
 ### Setup and Development
@@ -79,28 +83,34 @@ pip install dist/ai_signal-*.whl
 
 ## Architecture Overview
 
-AI Signal is undergoing migration to a clean core architecture (Week 1-2 of 5-week plan). The architecture separates business logic from UI through interfaces and dependency injection.
+AI Signal features a **clean, modular architecture** with strict separation of concerns:
+- **Core Layer**: Business logic and domain models (interface-driven, ABC-based)
+- **UI Layer**: Textual TUI screens and components
+- **Event System**: Pub/sub communication between layers (thread-safe, async)
+- **Dependency Injection**: Automated service resolution with lifecycle management
 
-### Current Architecture State (Sprint 1-2 Complete)
+### Layer Structure
 
 **Core Layer** (`src/aisignal/core/`):
-- `interfaces.py`: ABC definitions for all services (IStorageService, IConfigService, IContentService)
-- `models.py`: Domain models (Resource, ParsedItem, etc.)
+- `interfaces.py`: ABC definitions for all services (IStorageService, IConfigService, IContentService, ICoreService, IEventBus, IResourceManager)
+- `models.py`: Domain models (Resource, UserContext, OperationResult, BaseEvent and subclasses)
 - `services/`: Service implementations
-  - `storage_service.py`: Unified storage (wraps MarkdownSourceStorage + ParsedItemStorage)
-  - `config_service.py`: Configuration management
-  - `content_service.py`: Content fetching and AI analysis
-- `adapters/`: Adapter implementations for external dependencies
-  - `storage_adapter.py`, `config_adapter.py`, `content_adapter.py`
+  - `storage_service.py`: Unified storage (SQLite backend)
+  - `config_service.py`: Configuration management (YAML config)
+  - `content_service.py`: Content fetching and AI analysis (OpenAI, Jina AI)
+  - `core_service.py`: Main orchestrator service
+  - `event_bus.py`: Event pub/sub system (thread-safe)
+  - `resource_manager.py`: Resource collection management
+- `adapters/`: External dependency adapters (storage, config, content)
 
 **Utilities** (`src/aisignal/utils/`):
-- `advanced_service_container.py`: Dependency injection with singleton/transient/scoped lifetimes
+- `advanced_service_container.py`: DI container with singleton/transient/scoped lifetimes
 
 **UI Layer** (`src/aisignal/ui/textual/`):
-- `app.py`: Main Textual application
-- `screens/`: UI screens (main, detail, config, modals)
+- `app.py`: Main Textual application (event-driven)
+- `screens/`: UI screens (MainScreen, DetailScreen, ConfigScreen, modals)
 
-**Legacy Services** (`src/aisignal/services/`): Being phased out as migration completes
+**Legacy** (`src/aisignal/services/`, `src/aisignal/screens/`): Old implementations, avoid using
 
 ### Dependency Injection Pattern
 
@@ -115,13 +125,66 @@ container.register_singleton(IStorageService, StorageService)
 storage = container.get(IStorageService)  # Auto-resolves dependencies
 ```
 
+**Lifecycle Types**:
+- `singleton`: Single instance shared across app (default for services)
+- `transient`: New instance per request
+- `scoped`: Single instance per scope (e.g., per-request in web apps)
+
+### Event System Pattern
+
+Subscribe to and publish events via the EventBus:
+
+```python
+from aisignal.core.interfaces import IEventBus
+from aisignal.core.models import SyncProgressEvent
+
+# Subscribe to events
+async def on_sync_progress(event: SyncProgressEvent):
+    print(f"Sync: {event.current}/{event.total} - {event.message}")
+
+event_bus = container.get(IEventBus)
+event_bus.subscribe(SyncProgressEvent, on_sync_progress)
+
+# Publish events (from Core services)
+await event_bus.publish(SyncProgressEvent(
+    current=1, total=10, message="Fetching source 1/10"
+))
+```
+
+**Thread Safety**: EventBus is thread-safe with lock-protected subscriber management. All event handlers run asynchronously via `asyncio.create_task()`.
+
+### Event-Driven Communication
+
+The Event Bus enables decoupled communication between Core and UI layers:
+
+**Event Types** (see `core/models.py`):
+- `SyncProgressEvent`: Progress updates during sync operations
+- `ResourceUpdatedEvent`: When resources are created/updated/removed
+- `SyncCompletedEvent`: When sync operations complete
+
+**Event Flow** (example: sync sources):
+```
+1. User triggers sync in UI
+2. UI calls ICoreService.sync_sources()
+3. Core emits SyncProgressEvent(current=0, "Starting...")
+4. EventBus notifies all subscribers
+5. UI updates progress modal
+6. Core creates new resources
+7. Core emits ResourceUpdatedEvent for each
+8. UI refreshes resource list in real-time
+9. Core emits SyncCompletedEvent
+10. UI updates status
+```
+
+See `docs/architecture/event-bus.md` and `docs/architecture/event-catalog.md` for detailed event documentation.
+
 ### Data Flow
 
-1. Configuration loaded via `IConfigService`
-2. Content fetched from sources via `IContentService`
-3. AI analysis (OpenAI, Jina AI) with token tracking
+1. Configuration loaded via `IConfigService` from `~/.config/aisignal/config.yaml`
+2. Content fetched from sources via `IContentService` (Jina AI for HTML, native parsing for feeds)
+3. AI analysis via OpenAI with token tracking
 4. Storage via `IStorageService` (SQLite backend)
-5. UI displays via Textual screens
+5. UI updates via EventBus (pub/sub pattern)
 6. Export to Obsidian or social media sharing
 
 ## Important Files and Directories
@@ -183,6 +246,108 @@ AI Signal is configured via a YAML file (`~/.config/aisignal/config.yaml`) with 
 - API keys for OpenAI and Jina AI
 - Integration settings (Obsidian, social media)
 
+See `docs/configuration.md` for detailed configuration guide.
+
+## Debugging and Development Tips
+
+### Running with Development Mode
+
+```bash
+# Run with Textual console for debugging
+poetry run textual console
+
+# In another terminal, run the app
+poetry run aisignal run
+
+# See real-time logs in the console window
+```
+
+### Common Issues
+
+**Import errors after adding new services:**
+- Ensure service is registered in DI container
+- Check circular import dependencies
+- Use `from __future__ import annotations` for forward references
+
+**Event handlers not firing:**
+- Verify subscription happens before event publish
+- Check event type matches exactly (not subclass)
+- Ensure async handlers are awaited
+
+**Tests failing with "Event loop closed":**
+- Use `@pytest.mark.asyncio` decorator
+- Don't manually create event loops in tests
+- Use fixtures from `conftest.py`
+
+**Database locked errors:**
+- Ensure proper async/await usage in storage operations
+- Check for concurrent writes without proper locking
+- Use `OperationResult` pattern for error handling
+
+## Critical Patterns and Conventions
+
+### OperationResult Pattern
+
+All core service methods return `OperationResult[T]` for consistent error handling:
+
+```python
+from aisignal.core.models import OperationResult, OperationStatus
+
+async def get_resource(resource_id: str) -> OperationResult[Resource]:
+    if not resource_id:
+        return OperationResult(
+            status=OperationStatus.INVALID_INPUT,
+            message="Resource ID is required"
+        )
+
+    resource = await self._storage.get(resource_id)
+    if not resource:
+        return OperationResult(
+            status=OperationStatus.NOT_FOUND,
+            message=f"Resource {resource_id} not found"
+        )
+
+    return OperationResult(
+        status=OperationStatus.SUCCESS,
+        data=resource
+    )
+
+# Usage
+result = await storage.get_resource("abc123")
+if result.is_success():
+    print(result.data.title)
+else:
+    print(f"Error: {result.message}")
+```
+
+**Available Statuses**: `SUCCESS`, `ERROR`, `NOT_FOUND`, `INVALID_INPUT`, `UNAUTHORIZED`
+
+### Async/Await for I/O
+
+All I/O operations (file, network, database) MUST use async/await:
+
+```python
+# Correct
+async def fetch_content(url: str) -> OperationResult[str]:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return OperationResult(status=OperationStatus.SUCCESS, data=await response.text())
+
+# Incorrect - blocking I/O
+def fetch_content(url: str) -> str:
+    return requests.get(url).text  # Blocks event loop!
+```
+
+### UserContext for Multi-User Readiness
+
+All operations accept a `UserContext` parameter (currently single-user):
+
+```python
+async def sync_sources(self, user_context: UserContext) -> OperationResult:
+    # user_context.user_id used for multi-tenant isolation
+    resources = await self._storage.get_all_resources(user_context)
+```
+
 ## Working with the New Architecture
 
 ### Creating New Services
@@ -218,20 +383,52 @@ container.register_singleton(IMyService, MyService)
 The `tests/mocks.py` file contains mock implementations of all services. Use these for testing:
 
 ```python
-from tests.mocks import MockStorageService
+from tests.mocks import MockStorageService, create_test_container
 
 async def test_my_feature():
     mock_storage = MockStorageService()
     # Test with mock
+
+# Or use the pre-configured test container
+def test_with_container(container):  # Uses conftest.py fixture
+    storage = container.get(IStorageService)  # Auto-injected mock
 ```
 
-### Migration Status
+**Test Fixtures** (from `tests/conftest.py`):
+- `container`: Pre-configured DI container with all mock services
+- `empty_container`: Empty container for custom test setup
+- `sample_resource()`, `sample_resources()`: Test data generators
 
-Current migration state (see `docs/multi-ui-migration/01-migration-plan.md`):
-- ✅ Week 1: Foundation and interfaces complete
-- ✅ Week 2: Storage, Config, and Content services implemented
-- 🚧 Week 3: Textual app refactoring (in progress)
-- ⏳ Week 4: Event system
-- ⏳ Week 5: Multi-user preparation
+**Test Markers**:
+- `@pytest.mark.integration`: Integration tests
+- `@pytest.mark.performance`: Performance tests
+- `@pytest.mark.slow`: Slow-running tests
 
-When working with code, prefer the new core services over legacy implementations in `src/aisignal/services/`.
+Run specific test categories:
+```bash
+pytest -m "not slow"           # Skip slow tests
+pytest -m integration          # Only integration tests
+pytest tests/test_*_service.py # Only service unit tests
+```
+
+### Current Development Focus
+
+**Completed Architecture Work:**
+- ✅ Clean core architecture with interface-driven design (ABC-based)
+- ✅ Event Bus pub/sub system with real-time UI updates (Issues #25, #26)
+- ✅ Dependency injection with automated service resolution
+- ✅ 94% test coverage across core services (194 tests passing)
+- ✅ Thread-safe concurrent operations with lock protection
+
+**Current Priority: RSS Integration** (see GitHub Milestone #1, issues #14-21)
+- Native RSS/Atom feed parsing to reduce API costs by 50-80%
+- Feed auto-discovery from blog URLs
+- Hybrid approach: RSS for feeds, Jina AI for HTML pages
+- Estimated: 16 hours, 9 issues
+
+**Always prefer**:
+- New core services (`src/aisignal/core/`) over legacy (`src/aisignal/services/`)
+- Interface-based design (ABC) for new components
+- Event-driven updates via EventBus
+- Async/await for I/O operations
+- `OperationResult` pattern for error handling
