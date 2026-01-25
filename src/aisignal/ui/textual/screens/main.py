@@ -123,6 +123,25 @@ class MainScreen(BaseScreen):
             latest_position = table.get_row_index(self._last_selected_row)
             self.update_resource_list(cursor_position=latest_position)
 
+    def on_unmount(self) -> None:
+        """
+        Clean up event subscriptions when screen is unmounted.
+
+        Unsubscribes from all Core events to prevent memory leaks and ensure
+        proper resource cleanup when the screen is removed from the widget tree.
+        """
+        if hasattr(self.app, "event_bus") and self.app.event_bus:
+            # Unsubscribe from all events to prevent memory leaks
+            self.app.event_bus.unsubscribe(
+                SyncProgressEvent, self._handle_sync_progress
+            )
+            self.app.event_bus.unsubscribe(
+                ResourceUpdatedEvent, self._handle_resource_updated
+            )
+            self.app.event_bus.unsubscribe(
+                SyncCompletedEvent, self._handle_sync_completed
+            )
+
     def _load_stored_items(self) -> None:
         """
         Loads stored items from configured sources, processes them into Resource

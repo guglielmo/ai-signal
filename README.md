@@ -1,5 +1,9 @@
 # AI Signal
 
+![Tests](https://img.shields.io/badge/tests-190%20passed-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+
 ![AI Signal Terminal](https://raw.githubusercontent.com/guglielmo/ai-signal/main/docs/images/main.png)
 
 Terminal-based AI curator that turns information noise into meaningful signal.
