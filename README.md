@@ -13,6 +13,8 @@ AI Signal helps you regain control over your information diet. While platforms a
 
 Think of it as your personal content curator, running locally on your machine, surfacing valuable information while filtering out noise.
 
+> **Project status:** AI Signal is a personal, single-user prototype. It runs entirely on your machine as a terminal application — there is no multi-user mode and no hosted/web version, and none is planned for this project. See [VISION.md](VISION.md#non-goals-what-we-wont-do) for scope and non-goals.
+
 ## Features
 
 - **AI-Powered Analysis** - Smart categorization and ranking using OpenAI
@@ -29,7 +31,7 @@ Built with a **clean, event-driven architecture** featuring:
 - Dependency injection with automated service resolution
 - Real-time UI updates via pub/sub event bus
 - 94% test coverage across core services
-- Thread-safe operations ready for future multi-UI support
+- Thread-safe concurrent operations
 
 See [Architecture Documentation](docs/architecture/) for technical details.
 

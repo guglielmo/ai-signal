@@ -1,8 +1,9 @@
 # AI Signal - Product Vision
 
-**Version:** 0.10.0
-**Last Updated:** January 2026
+**Version:** 0.11.0
+**Last Updated:** July 2026
 **Status:** Active Development - Core Architecture Complete
+**Scope:** Single-user, local-only prototype (see Non-Goals below)
 
 ---
 
@@ -79,24 +80,20 @@ AI is powerful but can be expensive. We optimize aggressively:
 
 **Target:** <$10/month for 100 sources with daily checks
 
-### 3. **Terminal-First, Not Terminal-Only**
+### 3. **Terminal-Only, By Design**
 
-We love the terminal, but we're pragmatic:
-- **Primary interface:** Beautiful TUI (Textual framework)
-- **Future:** Web UI for sharing and collaboration
-- **API-ready:** Architecture supports headless operation
+- **Only interface:** Beautiful TUI (Textual framework), single-user, runs locally
+- No web UI, no hosted version, no headless/API mode is planned for this project — see [Non-Goals](#non-goals-what-we-wont-do)
 
-### 4. **Local-First, Cloud-Ready**
+### 4. **Local-Only**
 
-- **Current:** SQLite, runs entirely on your machine
-- **Future:** Optional sync, multi-device, collaboration
+- SQLite, runs entirely on your machine — no server, no sync, no cloud dependency
 - **Always:** Your data is portable (plain text, standard formats)
 
-### 5. **Open Core Model**
+### 5. **Open Source, No Monetization Plans**
 
 - **Core curation:** Open source, always free
-- **Premium features:** Cloud sync, team features, premium LLMs (future monetization)
-- **No bait-and-switch:** Core features stay open source
+- No premium tier, no cloud service, no monetization roadmap — if that ever happens, it would be a separate product, not paid tiers bolted onto this local tool
 
 ## Strategic Direction (2025-2026)
 
@@ -146,13 +143,10 @@ We love the terminal, but we're pragmatic:
 
 ### Future Horizons (2027+)
 
-**Possible directions** (not committed):
-- **Multi-user/Teams** - Share curated content with colleagues
-- **Public curations** - Publish your signal for others to subscribe
+**Possible directions for AI Signal itself** (not committed):
 - **Podcast/Video** - Transcribe and analyze audio/video content
-- **Browser extension** - Save pages to AI Signal from anywhere
-- **Mobile companion** - Read mode for saved items
-- **API marketplace** - Custom analyzers and exporters
+
+Multi-user/teams, public curations, a browser extension, a mobile companion, and an API marketplace have been intentionally moved **out of scope** for this project (see [Non-Goals](#non-goals-what-we-wont-do)). They may be explored later in a separate project that reuses AI Signal's core abstractions, but that is not part of this roadmap.
 
 ## Technical Strategy
 
@@ -167,14 +161,14 @@ The codebase has been refactored to a clean architecture with:
 - Comprehensive test suite (140+ tests)
 - CI/CD pipeline with automated testing
 
-This foundation enables future multi-UI support (Web API, MCP Server) without touching business logic.
+The Core business logic is decoupled from the UI via interfaces — this keeps the codebase testable and maintainable, though AI Signal itself remains a single TUI application (see [Non-Goals](#non-goals-what-we-wont-do)).
 
 ### Architecture Principles
 
 1. **Interface-driven design** - All core components implement interfaces
 2. **Dependency injection** - Services are composable and testable
 3. **Async-first** - Built on asyncio for concurrent operations
-4. **Storage abstraction** - SQLite now, but ready for PostgreSQL/Supabase
+4. **Storage abstraction** - SQLite by design choice (local-first); the interface could technically be swapped for a different backend, though no such change is planned for this project
 
 ### Technology Choices
 
@@ -189,7 +183,6 @@ This foundation enables future multi-UI support (Web API, MCP Server) without to
 - **Gemini 2.0 Flash** - 50% cheaper than GPT-4o-mini for structured content
 - **Claude 3.5 Haiku** - Better reasoning for complex extraction
 - **Local LLMs** - Llama, Mistral for privacy and zero cost
-- **Supabase** - If we go multi-user
 
 ### Design Patterns We Love
 
@@ -244,17 +237,12 @@ This foundation enables future multi-UI support (Web API, MCP Server) without to
 - <1% sync failures
 - Zero data loss
 
-### Business Metrics (Future)
+### Community Metrics (Future)
 
 **Open Source Health:**
 - 100+ GitHub stars (1 year)
 - 10+ contributors
 - Active community discussions
-
-**Revenue (if pursuing paid features):**
-- Target: $10/month premium tier
-- Goal: 10% of users convert to premium
-- Break-even: ~500 premium users
 
 ## Non-Goals (What We Won't Do)
 
@@ -263,10 +251,11 @@ To stay focused, here's what AI Signal is **not**:
 ❌ **Not a social network** - No feeds, likes, or follows
 ❌ **Not a read-it-later app** - Use Pocket/Instapaper for that
 ❌ **Not a bookmarking tool** - Export to Obsidian for long-term storage
-❌ **Not a browser extension** - Terminal-first, though APIs enable integrations
+❌ **Not a browser extension** - Terminal-only, single interface
 ❌ **Not for casual users** - Requires setup and tuning
 ❌ **Not enterprise software** - Individual knowledge workers first
 ❌ **Not a content recommendation engine** - You define categories, not us
+❌ **Not a multi-user or web product** - Single-user, local-only, by design (see [Out of Scope work](STATUS.md#out-of-scope) for what was explicitly cut)
 
 ## Competitive Landscape
 
@@ -313,11 +302,11 @@ Foundation (RSS) → Core UX (notes, stats) → Intelligence (AI features) → L
 
 ### What Gets Deferred
 
-- **Multi-user features** - Until 100+ single users
+- **Multi-user features** - Out of scope for this project (see [Non-Goals](#non-goals-what-we-wont-do))
 - **Complex AI features** - Until RSS proves cost savings
-- **Mobile apps** - Until TUI is excellent
+- **Mobile/web clients** - Out of scope for this project (see [Non-Goals](#non-goals-what-we-wont-do))
 - **Video/podcast** - Until text sources are perfected
-- **Enterprise features** - Until individual market is served
+- **Enterprise features** - Out of scope for this project
 
 ## Risks & Mitigations
 
@@ -338,7 +327,7 @@ Foundation (RSS) → Core UX (notes, stats) → Intelligence (AI features) → L
 
 **Mitigation:**
 - Keep Jina AI as fallback for HTML
-- Explore browser extension for manual saves
+- Support manual paste/import of content directly in the TUI
 - Partner with content APIs (future)
 - Focus on sources that **do** have RSS (still thousands)
 
@@ -438,13 +427,13 @@ We're building the tool we wish existed. A tool that:
 ## Questions This Vision Answers
 
 **Q: Is AI Signal a business or a hobby project?**
-A: Currently open source passion project. Future premium features are possible if there's demand, but core will always be free.
+A: A personal open-source prototype. There's no premium tier or monetization roadmap for this project.
 
 **Q: Why not just use ChatGPT?**
 A: ChatGPT requires manual prompting. AI Signal runs continuously, learns your preferences, and integrates with your workflow.
 
 **Q: Why terminal-based?**
-A: Terminals are fast, keyboard-driven, and scriptable. Perfect for power users. Web UI may come later.
+A: Terminals are fast, keyboard-driven, and scriptable. Perfect for power users. This project is terminal-only by design — see [Non-Goals](#non-goals-what-we-wont-do).
 
 **Q: Can I self-host?**
 A: Absolutely. It runs entirely on your machine with your API keys.
@@ -460,4 +449,4 @@ A: Your data never leaves your machine except API calls to OpenAI/Jina. All stor
 
 ---
 
-**Next Steps:** See [docs/analysis-2025-10/ai_signal_tech_assessment.md](docs/analysis-2025-10/ai_signal_tech_assessment.md) for technical analysis and [README.md](README.md) for getting started.
+**Next Steps:** See [docs/archive/2025-10-analysis/ai_signal_tech_assessment.md](docs/archive/2025-10-analysis/ai_signal_tech_assessment.md) for technical analysis and [README.md](README.md) for getting started.

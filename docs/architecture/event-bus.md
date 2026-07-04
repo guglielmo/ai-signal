@@ -92,7 +92,7 @@ The Event Bus provides:
 
 All events inherit from `BaseEvent` and include:
 - `timestamp`: When the event occurred
-- `user_context`: User context for the event (for future multi-user support)
+- `user_context`: present on every event for structural consistency; not currently used for per-user filtering (AI Signal is single-user)
 
 ### 1. SyncProgressEvent
 
@@ -480,22 +480,18 @@ class MockEventBus(IEventBus):
 5. **Dead Letter Queue**: Handle failed events
 6. **Event Serialization**: Support for remote event buses
 
-### Migration Path for Multi-User
+### Note on `user_context` and Multi-User
 
-The current event system is designed with multi-user support in mind:
+The `BaseEvent.user_context` field exists for structural consistency, not because multi-user support is planned:
 
 ```python
-# All events include user_context
 @dataclass
 class BaseEvent:
     timestamp: datetime = field(default_factory=datetime.now)
-    user_context: Optional[UserContext] = None  # Ready for multi-user!
+    user_context: Optional[UserContext] = None
 ```
 
-When multi-user support is implemented:
-1. Events will be filtered by `user_context`
-2. UI will only receive events for the current user
-3. EventBus may route events to user-specific channels
+**This is not on the roadmap for AI Signal** (single-user, local-only — see CLAUDE.md's Scope note and [VISION.md](../../VISION.md#non-goals-what-we-wont-do)). It's documented here only because the field already exists in code, in case it's useful context for a separate future project reusing these abstractions.
 
 ## Best Practices
 

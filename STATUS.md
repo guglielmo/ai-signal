@@ -6,7 +6,9 @@
 
 ## Overview
 
-AI Signal is a working application with core curation features and a clean architecture. The codebase has been refactored with interface-driven services and dependency injection, enabling future multi-UI support.
+AI Signal is a working application with core curation features and a clean architecture. The codebase has been refactored with interface-driven services and dependency injection for clean separation of concerns.
+
+**Scope:** AI Signal is a single-user, local-only prototype. Multi-user support and a web/API interface are explicitly out of scope for this project — see [VISION.md](VISION.md#non-goals-what-we-wont-do).
 
 ## What Works ✅
 
@@ -83,11 +85,11 @@ AI Signal is a working application with core curation features and a clean archi
 
 ### Future Considerations
 
-- [ ] Multi-user and team features
-- [ ] Public curations and sharing
 - [ ] Podcast and audio content support
-- [ ] Browser extension for saving pages
-- [ ] Mobile companion app
+
+## Out of Scope
+
+Multi-user support, sharing/public curations, a browser extension, and a mobile companion app are **not** planned for AI Signal — this project remains a single-user, local-only TUI (see [VISION.md](VISION.md#non-goals-what-we-wont-do)). Exploratory issues for a multi-user/web direction (#27, #28) have been closed; that work may resume later in a separate project.
 
 ## GitHub Milestones & Issues
 
@@ -108,12 +110,6 @@ This STATUS.md file should remain aligned with:
    - Finish removing all business logic from UI screens
    - Remove direct database access from UI components
    - Comprehensive regression testing
-
-2. **Multi-User Foundation (Architecture Week 5 - Deferred)**
-   - Add optional `user_id` fields to models
-   - Create database migration framework
-   - Design FastAPI skeleton
-   - Document API integration patterns
 
 ### Code Quality Improvements
 

@@ -12,6 +12,8 @@ The application uses a terminal user interface (TUI) built with the Textual libr
 **Test Coverage:** 94% (194 passing tests)
 **Python:** 3.9-3.12 supported
 
+**Scope:** This is a single-user, local-only prototype. Do not add multi-user features, authentication/multi-tenancy, or a web/HTTP API to this project — see [VISION.md](VISION.md#non-goals-what-we-wont-do) for the non-goals this reflects. A separate project may later reuse the Core layer's interfaces for a web-based product; that work does not belong in this repo.
+
 ## Project Status Documentation
 
 **IMPORTANT:** [STATUS.md](STATUS.md) in the project root is the **single source of truth** for:
@@ -117,7 +119,7 @@ AI Signal features a **clean, modular architecture** with strict separation of c
 ### Layer Structure
 
 **Core Layer** (`src/aisignal/core/`):
-- `interfaces.py`: ABC definitions for all services (IStorageService, IConfigService, IContentService, ICoreService, IEventBus, IResourceManager)
+- `interfaces.py`: ABC definitions for all services (IStorageService, IConfigManager, IContentService, ICoreService, IEventBus, IResourceManager)
 - `models.py`: Domain models (Resource, UserContext, OperationResult, BaseEvent and subclasses)
 - `services/`: Service implementations
   - `storage_service.py`: Unified storage (SQLite backend)
@@ -363,15 +365,16 @@ def fetch_content(url: str) -> str:
     return requests.get(url).text  # Blocks event loop!
 ```
 
-### UserContext for Multi-User Readiness
+### UserContext (Not Currently Multi-User)
 
-All operations accept a `UserContext` parameter (currently single-user):
+All Core service methods accept a `UserContext` parameter:
 
 ```python
 async def sync_sources(self, user_context: UserContext) -> OperationResult:
-    # user_context.user_id used for multi-tenant isolation
     resources = await self._storage.get_all_resources(user_context)
 ```
+
+This is a **single-user application** — `UserContext.user_id` defaults to `"default_user"` and is **not** used to filter or isolate data anywhere in storage today (the SQLite `items`/`sources` tables have no `user_id` column). The parameter is plumbing left over from an earlier architecture pass; there is no active plan to build real multi-tenancy on top of it in this project. Do not add per-user filtering logic here — see the Scope note at the top of this file.
 
 ## Working with the New Architecture
 
