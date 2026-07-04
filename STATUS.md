@@ -2,7 +2,7 @@
 
 **Current Version:** 0.11.0
 **Status:** Active Development - Core Architecture Complete
-**Last Updated:** January 25, 2026
+**Last Updated:** July 4, 2026
 
 ## Overview
 
@@ -60,26 +60,25 @@ AI Signal is a working application with core curation features and a clean archi
 
 **Why RSS First:** Reduces content fetching costs by 50-80% and improves performance 10-100×, enabling affordable AI features downstream.
 
-### Phase 2: Core UX Improvements (Q1 2026)
+### Phase 2: Core UX Improvements (Q3 2026)
 
-- [ ] **Resource Notes** - Add personal notes and annotations to saved items
-- [ ] **Statistics Dashboard** - Which sources and categories are most valuable?
+- [ ] **Resource Notes** ([#11](https://github.com/guglielmo/ai-signal/issues/11)) - Add personal notes and annotations to saved items — Jul 13-20, 2026
+- [ ] **Statistics Dashboard** ([#4](https://github.com/guglielmo/ai-signal/issues/4)) - Which sources and categories are most valuable? — Aug 3-10, 2026
 - [ ] **Better Sorting** - Enhanced sort options (recency, category, source)
 - [ ] **UI Polish** - Refinements based on real usage patterns
 
-### Phase 3: AI Intelligence Features (Q2 2026)
+### Phase 3: AI Intelligence Features (Q3-Q4 2026)
 
-- [ ] **Content Summarization** - Generate summaries and key takeaways
-- [ ] **Wisdom Extraction** - Pull out actionable insights from content
-- [ ] **Multi-LLM Support** - Choose from OpenAI, Claude, Gemini, or local models
-- [ ] **Batch Optimization** - Efficient grouping of source analysis
+- [ ] **Multi-LLM Support** ([#12](https://github.com/guglielmo/ai-signal/issues/12)) - Choose from OpenAI, Claude, Gemini, or local models — Aug 24-31, 2026
+- [ ] **Content Summarization / Wisdom Extraction** ([#7](https://github.com/guglielmo/ai-signal/issues/7)) - Generate summaries and pull out actionable insights — Sep 7-14, 2026
+- [ ] **Batch Optimization** ([#3](https://github.com/guglielmo/ai-signal/issues/3)) - Efficient grouping of source analysis — Sep 28-Oct 5, 2026
 
-### Phase 4: Learning & Personalization (Q3 2026+)
+### Phase 4: Learning & Personalization (Q4 2026)
 
-- [ ] **Feedback Loop** - Learn from your reading patterns and choices
+- [ ] **YouTube Videos** ([#5](https://github.com/guglielmo/ai-signal/issues/5)) - Transcribe and analyze video content — Oct 19-26, 2026
+- [ ] **Feedback Loop** ([#6](https://github.com/guglielmo/ai-signal/issues/6)) - Learn from your reading patterns and choices — Nov 9-30, 2026
 - [ ] **Category Suggestions** - Discover new interests based on behavior
 - [ ] **Source Recommendations** - Find relevant blogs and feeds
-- [ ] **YouTube Videos** - Transcribe and analyze video content
 - [ ] **Content Archiving** - Read/unread status, filtering, search
 
 ### Future Considerations
